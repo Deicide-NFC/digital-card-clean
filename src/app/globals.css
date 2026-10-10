@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible {
+  outline: 2px solid #2347f0;
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Public digital business card                                       */
+/* The accent colour and corner radii are set inline per profile.      */
+/* ------------------------------------------------------------------ */
+.pf {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --text: #0e1320;
+  --muted: #5b6475;
+  --line: rgba(14, 19, 32, 0.1);
+  color: var(--text);
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
+  --accent-fg: color-mix(in srgb, var(--accent) 82%, var(--text));
+}
+.pf-dark {
+  --bg: #0c0f14;
+  --surface: #171b22;
+  --text: #f2f4f8;
+  --muted: #9aa3b2;
+  --line: rgba(255, 255, 255, 0.1);
+}
+@media (prefers-color-scheme: dark) {
+  .pf-auto {
+    --bg: #0c0f14;
+    --surface: #171b22;
+    --text: #f2f4f8;
+    --muted: #9aa3b2;
+    --line: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.pf-bg-soft {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 12%, var(--bg)) 0, var(--bg) 380px), var(--bg);
+}
+.pf-bg-gradient {
+  background: linear-gradient(165deg, color-mix(in srgb, var(--accent) 34%, var(--bg)) 0%, var(--bg) 60%), var(--bg);
+}
+.pf-bg-mesh {
+  background:
+    radial-gradient(60% 40% at 90% 0%, color-mix(in srgb, var(--accent) 38%, transparent), transparent 70%),
+    radial-gradient(50% 35% at 0% 45%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+    radial-gradient(60% 40% at 100% 100%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 70%),
+    var(--bg);
+}
+.pf-bg-dots {
+  background:
+    radial-gradient(color-mix(in srgb, var(--accent) 28%, transparent) 1.2px, transparent 1.4px) 0 0 / 18px 18px,
+    var(--bg);
+}
+
+/* Cover: signal rings radiating from the top-right corner, where a phone taps the card */
+.pf-cover {
+  background:
+    repeating-radial-gradient(circle at 100% 0, rgba(255, 255, 255, 0.16) 0 1.5px, transparent 1.5px 26px),
+    linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 58%, #000));
+}
+
+/* One page-load reveal. Nothing else on the card moves on its own. */
+@keyframes pf-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.pf-rise {
+  animation: pf-rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pf-rise { animation: none; }
+}
+
+.pf-press { transition: transform 0.12s ease, filter 0.12s ease; }
+.pf-press:active { transform: scale(0.98); filter: brightness(0.96); }
+
+@media print {
+  .no-print { display: none !important; }
+}
+
+
+/* Premium design themes for digital business cards */
+.pf-design-classic { --accent: var(--accent); }
+.pf-design-obsidian-gold { --bg:#101012; --surface:#1c1b1b; --text:#f8f1df; --muted:#c0b28f; --line:rgba(212,175,55,.28); --accent:#c9a646; --on-accent:#15120a; }
+.pf-design-royal-prestige { --bg:#100d22; --surface:#1c1735; --text:#f7f1ff; --muted:#c3b7e8; --line:rgba(185,153,255,.25); --accent:#b99aff; --on-accent:#171027; }
+.pf-design-ivory-minimal { --bg:#f7f2e8; --surface:#fffdf8; --text:#28251f; --muted:#756d60; --line:rgba(70,58,42,.14); --accent:#9a7950; --on-accent:#fffdf8; }
+.pf-design-emerald-luxe { --bg:#071d19; --surface:#102a24; --text:#effaf4; --muted:#a5c6b7; --line:rgba(104,190,151,.24); --accent:#45b58b; --on-accent:#062219; }
+.pf-design-titanium { --bg:#171a1e; --surface:#242930; --text:#f2f4f6; --muted:#aab2bd; --line:rgba(190,200,212,.22); --accent:#a9b7c8; --on-accent:#15191e; }
+.pf-design-artisan-classic { --bg:#f3e9d8; --surface:#fff8ec; --text:#38271d; --muted:#806854; --line:rgba(95,62,38,.2); --accent:#8d4e2e; --on-accent:#fff8ec; }
+.pf-design-obsidian-gold .pf-cover { background:linear-gradient(135deg,#24211a,#070708); }
+.pf-design-royal-prestige .pf-cover { background:linear-gradient(135deg,#3b2a70,#120d29); }
+.pf-design-ivory-minimal .pf-cover { background:linear-gradient(135deg,#e9dfcd,#faf6ee); }
+.pf-design-emerald-luxe .pf-cover { background:linear-gradient(135deg,#1d5a48,#071d19); }
+.pf-design-titanium .pf-cover { background:linear-gradient(135deg,#59636f,#171a1e); }
+.pf-design-artisan-classic .pf-cover { background:linear-gradient(135deg,#c7a27c,#f3e9d8); }
