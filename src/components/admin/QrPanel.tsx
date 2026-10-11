@@ -5,6 +5,8 @@ import { Download, Printer } from "lucide-react";
 import { useEffect, useState } from "react";
 import { fileSafeName } from "@/lib/utils";
 
+export type SocialQrItem = { key: string; label: string; url: string };
+
 const DARK = "#0B1220";
 
 /** Small QR image (SVG) for lists. */
@@ -36,7 +38,7 @@ function download(href: string, filename: string) {
 }
 
 /** Printable QR sheet with download buttons. The QR encodes the exact NFC profile URL. */
-export function QrPanel({ url, name }: { url: string; name: string }) {
+export function QrPanel({ url, name, socialQrs = [] }: { url: string; name: string; socialQrs?: SocialQrItem[] }) {
   const [svg, setSvg] = useState("");
   const base = fileSafeName(name);
 
@@ -89,6 +91,56 @@ export function QrPanel({ url, name }: { url: string; name: string }) {
         />
         <p className="mt-5 break-all text-sm font-semibold text-ink">{url.replace(/^https?:\/\//, "")}</p>
       </div>
+
+      {socialQrs.length > 0 && (
+        <section className="no-print mt-8">
+          <h2 className="font-display text-xl font-bold text-ink">Individual social-media QR codes</h2>
+          <p className="mt-1 text-sm text-slate-600">Each QR opens that platform for this business. These use permanent redirect links, so you can update a social URL later without printing a new QR.</p>
+          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+            {socialQrs.map((item) => (
+              <SocialQrCard key={item.key} item={item} base={base} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
+  );
+}
+
+function SocialQrCard({ item, base }: { item: SocialQrItem; base: string }) {
+  const [svg, setSvg] = useState("");
+  useEffect(() => {
+    QRCode.toString(item.url, { type: "svg", margin: 2, errorCorrectionLevel: "H", color: { dark: DARK, light: "#ffffff" } })
+      .then(setSvg)
+      .catch(() => setSvg(""));
+  }, [item.url]);
+
+  function saveSvg() {
+    const data = new Blob([svg], { type: "image/svg+xml" });
+    const href = URL.createObjectURL(data);
+    download(href, `${base}-${item.key}-qr.svg`);
+    window.setTimeout(() => URL.revokeObjectURL(href), 1000);
+  }
+
+  async function savePng() {
+    const dataUrl = await QRCode.toDataURL(item.url, {
+      width: 1000,
+      margin: 2,
+      errorCorrectionLevel: "H",
+      color: { dark: DARK, light: "#ffffff" },
+    });
+    download(dataUrl, `${base}-${item.key}-qr.png`);
+  }
+
+  return (
+    <article className="rounded-2xl border border-line bg-white p-3 text-center">
+      <h3 className="font-semibold text-ink">{item.label}</h3>
+      <div className="mx-auto mt-2 aspect-square w-full max-w-[180px] bg-white [&>svg]:h-full [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} aria-label={`${item.label} QR code`} role="img" />
+      <p className="mt-2 break-all text-[11px] text-slate-500">{item.url.replace(/^https?:\/\//, "")}</p>
+      <div className="mt-3 flex flex-wrap justify-center gap-2">
+        <button type="button" onClick={savePng} disabled={!svg} className="rounded-lg border border-line px-3 py-2 text-xs font-bold hover:bg-mist disabled:opacity-50">PNG</button>
+        <button type="button" onClick={saveSvg} disabled={!svg} className="rounded-lg border border-line px-3 py-2 text-xs font-bold hover:bg-mist disabled:opacity-50">SVG</button>
+      </div>
+    </article>
   );
 }
