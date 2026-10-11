@@ -11,6 +11,8 @@ import type { Profile } from "@/lib/types";
 import { profileUrl, slugify } from "@/lib/utils";
 
 type Values = {
+  profile_type: string;
+  business_name: string;
   full_name: string;
   profile_id: string;
   job_title: string;
@@ -37,7 +39,7 @@ type Values = {
 };
 
 const TEXT_KEYS = [
-  "full_name", "profile_id", "job_title", "company", "bio", "phone", "email", "website",
+  "profile_type", "business_name", "full_name", "profile_id", "job_title", "company", "bio", "phone", "email", "website",
   "facebook", "instagram", "tiktok", "linkedin", "messenger", "whatsapp", "viber",
   "address", "maps_url", "business_hours", "theme", "design_theme", "primary_color", "background", "button_style",
 ] as const;
@@ -45,15 +47,17 @@ const TEXT_KEYS = [
 function toValues(p?: Profile): Values {
   const v = (x: string | null | undefined) => x ?? "";
   return {
-    full_name: v(p?.full_name),
+    profile_type: p?.profile_type ?? "personal",
+    business_name: v(p?.business_name),
+    full_name: v(p?.full_name) || (p ? "" : "Charles Arthur Salamat"),
     profile_id: v(p?.profile_id),
-    job_title: v(p?.job_title),
-    company: v(p?.company),
+    job_title: v(p?.job_title) || (p ? "" : "Assistant Restaurant Manager"),
+    company: v(p?.company) || (p ? "" : "Red Ribbon"),
     bio: v(p?.bio),
-    phone: v(p?.phone),
-    email: v(p?.email),
+    phone: v(p?.phone) || (p ? "" : "+63 915 905 1798"),
+    email: v(p?.email) || (p ? "" : "slmtarthur@gmail.com"),
     website: v(p?.website),
-    facebook: v(p?.facebook),
+    facebook: v(p?.facebook) || (p ? "" : "https://www.facebook.com/share/1CMwgZirrk/"),
     instagram: v(p?.instagram),
     tiktok: v(p?.tiktok),
     linkedin: v(p?.linkedin),
@@ -249,12 +253,50 @@ export function CustomerForm({ mode, initial }: { mode: "create" | "edit"; initi
 
   const set = (k: keyof Values, val: string) => setV((s) => ({ ...s, [k]: val }));
 
+  function changeProfileType(nextType: string) {
+    if (nextType === v.profile_type) return;
+    if (nextType === "business" && mode === "create") {
+      // Never carry the owner's personal contact/social details into a new business profile by accident.
+      setV((s) => ({
+        ...s,
+        profile_type: "business",
+        business_name: "",
+        full_name: "",
+        profile_id: "",
+        job_title: "",
+        company: "",
+        bio: "",
+        phone: "",
+        email: "",
+        website: "",
+        facebook: "",
+        instagram: "",
+        tiktok: "",
+        linkedin: "",
+        messenger: "",
+        whatsapp: "",
+        viber: "",
+        address: "",
+        maps_url: "",
+        business_hours: "",
+      }));
+      setIdTouched(false);
+      setPhoto(null);
+      setLogo(null);
+      setRemovePhoto(false);
+      setRemoveLogo(false);
+      return;
+    }
+    set("profile_type", nextType);
+  }
+
   // Suggest a Profile ID from the first name until the admin types their own (create mode only).
   useEffect(() => {
     if (mode !== "create" || idTouched) return;
-    const first = slugify(v.full_name.trim().split(/\s+/)[0] || "");
+    const idSource = v.profile_type === "business" ? v.business_name : v.full_name;
+    const first = slugify(idSource.trim().split(/\s+/)[0] || "");
     setV((s) => ({ ...s, profile_id: first.length >= 2 ? `${first}01` : "" }));
-  }, [v.full_name, idTouched, mode]);
+  }, [v.full_name, v.business_name, v.profile_type, idTouched, mode]);
 
   const photoUrl = photo?.url ?? (removePhoto ? null : initial?.profile_photo ?? null);
   const logoUrl = logo?.url ?? (removeLogo ? null : initial?.company_logo ?? null);
@@ -283,6 +325,8 @@ export function CustomerForm({ mode, initial }: { mode: "create" | "edit"; initi
     const n = (s: string) => (s.trim() ? s.trim() : null);
     return {
       id: "preview",
+      profile_type: v.profile_type as Profile["profile_type"],
+      business_name: n(v.business_name),
       profile_id: v.profile_id || "preview",
       full_name: v.full_name.trim() || "Full Name",
       job_title: n(v.job_title) ?? (v.full_name ? null : "Job title"),
@@ -362,8 +406,20 @@ export function CustomerForm({ mode, initial }: { mode: "create" | "edit"; initi
           </div>
         )}
 
-        <Section title="Basic info">
-          <Field label="Full name *" error={errors.full_name} htmlFor="full_name">
+        <Section title="Basic info" description="Choose whether this card represents a person or a business.">
+          <div className="sm:col-span-2">
+            <Field label="Card type">
+              <Segmented name="Card type" value={v.profile_type} options={[{ value: "personal", label: "Personal ID" }, { value: "business", label: "Business ID" }]} onChange={changeProfileType} />
+            </Field>
+          </div>
+          {v.profile_type === "business" && (
+            <div className="sm:col-span-2">
+              <Field label="Business / brand name *" error={errors.business_name} htmlFor="business_name">
+                <input id="business_name" required maxLength={120} className={inputCls} value={v.business_name} onChange={(e) => set("business_name", e.target.value)} placeholder="Your business name" />
+              </Field>
+            </div>
+          )}
+          <Field label={v.profile_type === "business" ? "Contact person's name *" : "Full name *"} error={errors.full_name} htmlFor="full_name">
             <input id="full_name" required maxLength={100} className={inputCls} value={v.full_name} onChange={(e) => set("full_name", e.target.value)} placeholder="Charles Arthur Salamat" />
           </Field>
 
@@ -401,8 +457,8 @@ export function CustomerForm({ mode, initial }: { mode: "create" | "edit"; initi
           <Field label="Job title" error={errors.job_title} htmlFor="job_title">
             <input id="job_title" className={inputCls} value={v.job_title} onChange={(e) => set("job_title", e.target.value)} placeholder="Assistant Restaurant Manager" />
           </Field>
-          <Field label="Company" error={errors.company} htmlFor="company">
-            <input id="company" className={inputCls} value={v.company} onChange={(e) => set("company", e.target.value)} placeholder="Red Ribbon" />
+          <Field label={v.profile_type === "business" ? "Branch / department (optional)" : "Company"} error={errors.company} htmlFor="company">
+            <input id="company" className={inputCls} value={v.company} onChange={(e) => set("company", e.target.value)} placeholder={v.profile_type === "business" ? "e.g. Plaridel Branch" : "Red Ribbon"} />
           </Field>
           <div className="sm:col-span-2">
             <Field label="Bio" error={errors.bio} htmlFor="bio" hint={`${v.bio.length}/500`}>
@@ -449,7 +505,7 @@ export function CustomerForm({ mode, initial }: { mode: "create" | "edit"; initi
           </div>
         </Section>
 
-        <Section title="Social and messaging" description="Paste a username, a phone number or a full link.">
+        <Section title="Social and messaging" description="Paste a username, a phone number or a full link. For Business IDs, a separate QR code will be generated for each platform you fill in.">
           <Field label="Facebook" error={errors.facebook} htmlFor="facebook">
             <input id="facebook" className={inputCls} value={v.facebook} onChange={(e) => set("facebook", e.target.value)} placeholder="username or link" autoCapitalize="none" />
           </Field>
