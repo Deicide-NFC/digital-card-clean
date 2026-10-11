@@ -27,7 +27,7 @@ export default async function QrListPage() {
               >
                 <QrThumb url={profileUrl(p.profile_id)} size={88} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{p.full_name}</p>
+                  <p className="truncate font-semibold">{p.profile_type === "business" ? (p.business_name || p.full_name) : p.full_name}</p>
                   <p className="truncate font-mono text-xs text-slate-500">/c/{p.profile_id}</p>
                   <div className="mt-2"><StatusBadge status={p.status} /></div>
                 </div>
