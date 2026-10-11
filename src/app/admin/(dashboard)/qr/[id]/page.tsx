@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CopyButton } from "@/components/admin/CopyButton";
 import { QrPanel } from "@/components/admin/QrPanel";
+import { socialLinks } from "@/lib/links";
+import { siteUrl } from "@/lib/utils";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { getProfileById } from "@/lib/profiles";
 import { profileUrl } from "@/lib/utils";
@@ -37,7 +39,7 @@ export default async function QrDetailPage({
 
       <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h1 className="font-display text-3xl font-bold">{p.full_name}</h1>
+          <h1 className="font-display text-3xl font-bold">{p.profile_type === "business" ? (p.business_name || p.full_name) : p.full_name}</h1>
           <StatusBadge status={p.status} />
         </div>
         <div className="flex gap-2 text-sm font-semibold">
@@ -47,7 +49,15 @@ export default async function QrDetailPage({
       </div>
 
       <div className="grid gap-8 md:grid-cols-[1fr_320px]">
-        <QrPanel url={url} name={p.full_name} />
+        <QrPanel
+          url={url}
+          name={p.profile_type === "business" ? (p.business_name || p.full_name) : p.full_name}
+          socialQrs={p.profile_type === "business" ? socialLinks(p).map((item) => ({
+            key: item.key,
+            label: item.label,
+            url: `${siteUrl()}/go/${p.profile_id}/${item.key}`,
+          })) : []}
+        />
 
         <div className="no-print space-y-4">
           <section className="rounded-2xl border border-line bg-white p-5">
