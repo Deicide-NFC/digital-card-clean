@@ -86,10 +86,10 @@ export default async function CustomersPage({
                 {profiles.map((p) => (
                   <tr key={p.id} className="align-top">
                     <td className="px-4 py-3.5">
-                      <Link href={`/admin/customers/${p.id}/edit`} className="font-semibold hover:underline">{p.full_name}</Link>
+                      <Link href={`/admin/customers/${p.id}/edit`} className="font-semibold hover:underline">{p.profile_type === "business" ? (p.business_name || p.full_name) : p.full_name}</Link>
                       {p.job_title && <p className="text-slate-500">{p.job_title}</p>}
                     </td>
-                    <td className="px-4 py-3.5 text-slate-700">{p.company || "-"}</td>
+                    <td className="px-4 py-3.5 text-slate-700">{p.profile_type === "business" ? "Business ID" : (p.company || "-")}</td>
                     <td className="px-4 py-3.5">
                       <p className="font-mono font-semibold">{p.profile_id}</p>
                       <p className="max-w-[220px] truncate text-xs text-slate-500">{profileUrl(p.profile_id)}</p>
@@ -97,7 +97,7 @@ export default async function CustomersPage({
                     <td className="px-4 py-3.5"><StatusBadge status={p.status} /></td>
                     <td className="whitespace-nowrap px-4 py-3.5 text-slate-600">{formatDate(p.created_at)}</td>
                     <td className="px-4 py-2.5">
-                      <RowActions id={p.id} profileId={p.profile_id} name={p.full_name} status={p.status} url={profileUrl(p.profile_id)} />
+                      <RowActions id={p.id} profileId={p.profile_id} name={p.profile_type === "business" ? (p.business_name || p.full_name) : p.full_name} status={p.status} url={profileUrl(p.profile_id)} />
                     </td>
                   </tr>
                 ))}
@@ -111,15 +111,15 @@ export default async function CustomersPage({
               <li key={p.id} className="rounded-2xl border border-line bg-white p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <Link href={`/admin/customers/${p.id}/edit`} className="block truncate font-semibold">{p.full_name}</Link>
-                    <p className="truncate text-sm text-slate-500">{p.company || "No company"}</p>
+                    <Link href={`/admin/customers/${p.id}/edit`} className="block truncate font-semibold">{p.profile_type === "business" ? (p.business_name || p.full_name) : p.full_name}</Link>
+                    <p className="truncate text-sm text-slate-500">{p.profile_type === "business" ? "Business ID" : (p.company || "No company")}</p>
                   </div>
                   <StatusBadge status={p.status} />
                 </div>
                 <p className="mt-2 truncate font-mono text-xs text-slate-500">{profileUrl(p.profile_id)}</p>
                 <p className="mt-1 text-xs text-slate-400">Created {formatDate(p.created_at)}</p>
                 <div className="mt-3 border-t border-line pt-2">
-                  <RowActions id={p.id} profileId={p.profile_id} name={p.full_name} status={p.status} url={profileUrl(p.profile_id)} />
+                  <RowActions id={p.id} profileId={p.profile_id} name={p.profile_type === "business" ? (p.business_name || p.full_name) : p.full_name} status={p.status} url={profileUrl(p.profile_id)} />
                 </div>
               </li>
             ))}
