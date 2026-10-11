@@ -13,6 +13,9 @@ create table if not exists public.profiles (
   -- The permanent public handle. It is part of the URL printed on the QR
   -- code and written to the NFC card: https://DOMAIN/c/<profile_id>
   profile_id     text not null,
+  profile_type   text not null default 'personal',
+  business_name  text,
+  design_theme   text not null default 'classic',
   full_name      text not null,
   job_title      text,
   company        text,
@@ -49,6 +52,10 @@ create table if not exists public.profiles (
     check (profile_id ~ '^[a-z0-9][a-z0-9_-]{2,29}$'),
   constraint profiles_status_check
     check (status in ('active', 'disabled')),
+  constraint profiles_profile_type_check
+    check (profile_type in ('personal', 'business')),
+  constraint profiles_design_theme_check
+    check (design_theme in ('classic', 'obsidian-gold', 'royal-prestige', 'ivory-minimal', 'emerald-luxe', 'titanium', 'artisan-classic')),
   constraint profiles_theme_check
     check (theme in ('light', 'dark', 'auto')),
   constraint profiles_background_check
