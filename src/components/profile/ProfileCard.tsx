@@ -105,10 +105,19 @@ export function ProfileCard({ profile: p, preview = false }: { profile: Profile;
         {/* Identity */}
         <section className="pf-rise px-5 pt-16" style={rise(1)}>
           <h1 className="font-display text-[30px] font-bold leading-[1.08] tracking-tight text-pf-text">
-            {p.full_name}
+            {p.profile_type === "business" ? (p.business_name || p.company || p.full_name) : p.full_name}
           </h1>
-          {p.job_title && <p className="mt-1.5 text-[17px] text-pf-muted">{p.job_title}</p>}
-          {p.company && <p className="text-[17px] font-semibold text-pf-text">{p.company}</p>}
+          {p.profile_type === "business" ? (
+            <>
+              {p.company && p.company !== (p.business_name || p.company) && <p className="mt-1 text-[16px] font-semibold text-pf-text">{p.company}</p>}
+              {p.full_name && p.full_name !== (p.business_name || p.company) && <p className="mt-1.5 text-[15px] text-pf-muted">Contact: {p.full_name}{p.job_title ? ` · ${p.job_title}` : ""}</p>}
+            </>
+          ) : (
+            <>
+              {p.job_title && <p className="mt-1.5 text-[17px] text-pf-muted">{p.job_title}</p>}
+              {p.company && <p className="text-[17px] font-semibold text-pf-text">{p.company}</p>}
+            </>
+          )}
         </section>
 
         {/* Primary action */}
