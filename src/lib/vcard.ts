@@ -36,7 +36,7 @@ export function buildVCard(p: Profile, opts: VCardOptions = {}) {
     `N:${esc(family)};${esc(given)};;;`,
     `FN:${esc(p.full_name.trim())}`,
   ];
-  if (p.company) lines.push(`ORG:${esc(p.company)}`);
+  if (p.business_name || p.company) lines.push(`ORG:${esc(p.business_name || p.company || "")}`);
   if (p.job_title) lines.push(`TITLE:${esc(p.job_title)}`);
   if (p.phone) lines.push(`TEL;TYPE=CELL:${p.phone.trim()}`);
   if (p.email) lines.push(`EMAIL;TYPE=INTERNET:${p.email.trim()}`);

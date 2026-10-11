@@ -1,4 +1,4 @@
-import type { BackgroundStyle, ButtonStyle, DesignTheme, ThemeMode } from "./types";
+import type { BackgroundStyle, ButtonStyle, DesignTheme, ProfileType, ThemeMode } from "./types";
 
 export const PROFILE_ID_RE = /^[a-z0-9][a-z0-9_-]{2,29}$/;
 
@@ -8,6 +8,8 @@ export function normalizeProfileId(raw: string) {
 
 export interface ProfileInput {
   profile_id: string;
+  profile_type: ProfileType;
+  business_name: string | null;
   full_name: string;
   job_title: string | null;
   company: string | null;
@@ -62,7 +64,13 @@ export function parseProfileForm(fd: FormData) {
   const errors: Record<string, string> = {};
 
   const profile_id = normalizeProfileId(str(fd, "profile_id"));
+  const profile_type_raw = str(fd, "profile_type") as ProfileType;
+  const profile_type: ProfileType = profile_type_raw === "business" ? "business" : "personal";
+  const business_name = str(fd, "business_name") || null;
   const full_name = str(fd, "full_name");
+
+  if (profile_type === "business" && !business_name) errors.business_name = "Enter the business or brand name.";
+  else if (business_name && business_name.length > 120) errors.business_name = "Keep the business name under 120 characters.";
 
   if (!full_name) errors.full_name = "Enter the person's full name.";
   else if (full_name.length > 100) errors.full_name = "Keep the name under 100 characters.";
@@ -131,6 +139,8 @@ export function parseProfileForm(fd: FormData) {
 
   const values: ProfileInput = {
     profile_id,
+    profile_type,
+    business_name,
     full_name,
     job_title,
     company,

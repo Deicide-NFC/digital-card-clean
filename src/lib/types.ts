@@ -1,5 +1,6 @@
 
 export type ProfileStatus = "active" | "disabled";
+export type ProfileType = "personal" | "business";
 export type ThemeMode = "light" | "dark" | "auto";
 export type BackgroundStyle = "soft" | "gradient" | "mesh" | "dots";
 export type ButtonStyle = "rounded" | "pill" | "square";
@@ -16,6 +17,8 @@ export type DesignTheme =
 export interface Profile {
   id: string;
   profile_id: string;
+  profile_type: ProfileType;
+  business_name: string | null;
   full_name: string;
   job_title: string | null;
   company: string | null;

@@ -4,15 +4,24 @@ import { readableOn } from "./utils";
 
 /** Inline CSS variables for a profile. Light/dark palettes live in globals.css. */
 export function profileThemeStyle(
-  p: Pick<Profile, "primary_color" | "button_style">
+  p: Pick<Profile, "primary_color" | "button_style" | "design_theme">
 ): CSSProperties {
   const radius =
     p.button_style === "pill" ? "999px" : p.button_style === "square" ? "8px" : "16px";
   const tile =
     p.button_style === "pill" ? "26px" : p.button_style === "square" ? "8px" : "18px";
+  const themeAccents: Partial<Record<Profile["design_theme"], string>> = {
+    "obsidian-gold": "#c9a646",
+    "royal-prestige": "#b99aff",
+    "ivory-minimal": "#9a7950",
+    "emerald-luxe": "#45b58b",
+    titanium: "#a9b7c8",
+    "artisan-classic": "#8d4e2e",
+  };
+  const accent = p.design_theme === "classic" ? p.primary_color : (themeAccents[p.design_theme] ?? p.primary_color);
   return {
-    "--accent": p.primary_color,
-    "--on-accent": readableOn(p.primary_color),
+    "--accent": accent,
+    "--on-accent": readableOn(accent),
     "--btn-r": radius,
     "--tile-r": tile,
   } as CSSProperties;
