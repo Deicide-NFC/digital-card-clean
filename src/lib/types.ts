@@ -38,6 +38,13 @@ export interface Profile {
   address: string | null;
   maps_url: string | null;
   business_hours: string | null;
+  menu_items: string | null;
+  faq1_question: string | null;
+  faq1_answer: string | null;
+  faq2_question: string | null;
+  faq2_answer: string | null;
+  faq3_question: string | null;
+  faq3_answer: string | null;
   theme: ThemeMode;
   design_theme: DesignTheme;
   primary_color: string;

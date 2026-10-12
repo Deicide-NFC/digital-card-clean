@@ -31,6 +31,8 @@ type Values = {
   address: string;
   maps_url: string;
   business_hours: string;
+  menu_items: string;
+  faq1_question: string; faq1_answer: string; faq2_question: string; faq2_answer: string; faq3_question: string; faq3_answer: string;
   theme: string;
   design_theme: string;
   primary_color: string;
@@ -41,7 +43,7 @@ type Values = {
 const TEXT_KEYS = [
   "profile_type", "business_name", "full_name", "profile_id", "job_title", "company", "bio", "phone", "email", "website",
   "facebook", "instagram", "tiktok", "linkedin", "messenger", "whatsapp", "viber",
-  "address", "maps_url", "business_hours", "theme", "design_theme", "primary_color", "background", "button_style",
+  "address", "maps_url", "business_hours", "menu_items", "faq1_question", "faq1_answer", "faq2_question", "faq2_answer", "faq3_question", "faq3_answer", "theme", "design_theme", "primary_color", "background", "button_style",
 ] as const;
 
 function toValues(p?: Profile): Values {
@@ -67,6 +69,10 @@ function toValues(p?: Profile): Values {
     address: v(p?.address),
     maps_url: v(p?.maps_url),
     business_hours: v(p?.business_hours),
+    menu_items: v(p?.menu_items),
+    faq1_question: v(p?.faq1_question), faq1_answer: v(p?.faq1_answer),
+    faq2_question: v(p?.faq2_question), faq2_answer: v(p?.faq2_answer),
+    faq3_question: v(p?.faq3_question), faq3_answer: v(p?.faq3_answer),
     theme: p?.theme ?? "light",
     design_theme: p?.design_theme ?? "classic",
     primary_color: p?.primary_color ?? "#2347F0",
@@ -250,6 +256,15 @@ export function CustomerForm({ mode, initial }: { mode: "create" | "edit"; initi
   const [logo, setLogo] = useState<{ blob: Blob; url: string } | null>(null);
   const [removePhoto, setRemovePhoto] = useState(false);
   const [removeLogo, setRemoveLogo] = useState(false);
+  type ProductDraft = { name: string; description: string; price: string; imageUrl: string; file: File | null; preview: string };
+  const initialProducts = (): ProductDraft[] => {
+    try {
+      const raw = initial?.menu_items ? JSON.parse(initial.menu_items) : [];
+      if (Array.isArray(raw)) return raw.slice(0, 30).map((x: any) => ({ name: String(x.name || ""), description: String(x.description || ""), price: String(x.price ?? ""), imageUrl: String(x.imageUrl || x.image_url || ""), file: null, preview: String(x.imageUrl || x.image_url || "") }));
+    } catch { /* older pipe-separated menus are handled below */ }
+    return (initial?.menu_items || "").split(/\r?\n/).filter(Boolean).slice(0, 30).map((line) => { const [name="", price="", description=""] = line.split("|"); return { name: name.trim(), price: price.trim(), description: description.trim(), imageUrl: "", file: null, preview: "" }; });
+  };
+  const [products, setProducts] = useState<ProductDraft[]>(initialProducts);
 
   const set = (k: keyof Values, val: string) => setV((s) => ({ ...s, [k]: val }));
 
@@ -279,6 +294,8 @@ export function CustomerForm({ mode, initial }: { mode: "create" | "edit"; initi
         address: "",
         maps_url: "",
         business_hours: "",
+        menu_items: "",
+        faq1_question: "", faq1_answer: "", faq2_question: "", faq2_answer: "", faq3_question: "", faq3_answer: "",
       }));
       setIdTouched(false);
       setPhoto(null);
@@ -347,6 +364,10 @@ export function CustomerForm({ mode, initial }: { mode: "create" | "edit"; initi
       address: n(v.address),
       maps_url: n(v.maps_url),
       business_hours: n(v.business_hours),
+      menu_items: n(v.menu_items),
+      faq1_question: n(v.faq1_question), faq1_answer: n(v.faq1_answer),
+      faq2_question: n(v.faq2_question), faq2_answer: n(v.faq2_answer),
+      faq3_question: n(v.faq3_question), faq3_answer: n(v.faq3_answer),
       theme: v.theme as Profile["theme"],
       design_theme: v.design_theme as Profile["design_theme"],
       primary_color: /^#[0-9a-fA-F]{6}$/.test(v.primary_color) ? v.primary_color : "#2347F0",
@@ -369,6 +390,8 @@ export function CustomerForm({ mode, initial }: { mode: "create" | "edit"; initi
     if (logo) fd.set("logo_file", new File([logo.blob], "logo.png", { type: logo.blob.type }));
     if (removePhoto && !photo) fd.set("remove_photo", "1");
     if (removeLogo && !logo) fd.set("remove_logo", "1");
+    fd.set("menu_items", JSON.stringify(products.map((p, formIndex) => ({ name: p.name.trim(), description: p.description.trim(), price: p.price, imageUrl: p.imageUrl, formIndex }))));
+    products.forEach((product, index) => { if (product.file) fd.set(`menu_photo_${index}`, product.file); });
 
     start(async () => {
       const res = mode === "create" ? await createProfileAction(fd) : await updateProfileAction(initial!.id, fd);
@@ -546,6 +569,42 @@ export function CustomerForm({ mode, initial }: { mode: "create" | "edit"; initi
             </Field>
           </div>
         </Section>
+
+        {v.profile_type === "business" && (
+          <>
+            <Section title="Restaurant menu & ordering" description={`Add up to 30 products. Upload a photo, then enter the name, description and price. ${products.length}/30 product slots used.`}>
+              <div className="sm:col-span-2 space-y-4">
+                {products.map((product, index) => (
+                  <div key={index} className="grid gap-3 rounded-2xl border border-line p-4 sm:grid-cols-[120px_minmax(0,1fr)]">
+                    <div>
+                      <div className="flex h-24 w-full items-center justify-center overflow-hidden rounded-xl bg-mist">
+                        {product.preview ? <img src={product.preview} alt={product.name || `Product ${index + 1}`} className="h-full w-full object-cover" /> : <ImagePlus className="h-7 w-7 text-slate-400" />}
+                      </div>
+                      <label className="mt-2 block cursor-pointer rounded-lg border border-line px-3 py-2 text-center text-xs font-semibold hover:bg-mist">
+                        {product.file || product.imageUrl ? "Change photo" : "Upload photo"}
+                        <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const file=e.target.files?.[0]; if (!file) return; if (file.size > 10*1024*1024) { setBanner({kind:"error",text:"Choose a product photo smaller than 10 MB."}); return; } void (async()=>{ try { const bmp=await createImageBitmap(file); const scale=Math.min(1,1000/Math.max(bmp.width,bmp.height)); const canvas=document.createElement("canvas"); canvas.width=Math.round(bmp.width*scale); canvas.height=Math.round(bmp.height*scale); canvas.getContext("2d")!.drawImage(bmp,0,0,canvas.width,canvas.height); const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob((b)=>b?resolve(b):reject(new Error("encode")),"image/jpeg",0.82)); const compressed=new File([blob],`product-${index+1}.jpg`,{type:"image/jpeg"}); const preview=URL.createObjectURL(blob); setProducts((old)=>old.map((x,i)=>i===index?{...x,file:compressed,preview}:x)); setBanner(null); } catch { setBanner({kind:"error",text:"That product photo could not be read. Try another JPG or PNG."}); } })(); e.currentTarget.value=""; }} />
+                      </label>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label={`Product ${index + 1} name`}><input className={inputCls} maxLength={100} value={product.name} onChange={(e)=>setProducts((old)=>old.map((x,i)=>i===index?{...x,name:e.target.value}:x))} placeholder="Product name" /></Field>
+                      <Field label="Price (₱)"><input className={inputCls} inputMode="decimal" value={product.price} onChange={(e)=>setProducts((old)=>old.map((x,i)=>i===index?{...x,price:e.target.value}:x))} placeholder="180.00" /></Field>
+                      <div className="sm:col-span-2"><Field label="Short description"><textarea className={inputCls} rows={2} maxLength={240} value={product.description} onChange={(e)=>setProducts((old)=>old.map((x,i)=>i===index?{...x,description:e.target.value}:x))} placeholder="A short description of this product" /></Field></div>
+                      <div className="sm:col-span-2 flex justify-end"><button type="button" onClick={()=>setProducts((old)=>old.filter((_,i)=>i!==index))} className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"><Trash2 className="h-4 w-4"/> Remove product</button></div>
+                    </div>
+                  </div>
+                ))}
+                <button type="button" disabled={products.length>=30} onClick={()=>setProducts((old)=>[...old,{name:"",description:"",price:"",imageUrl:"",file:null,preview:""}])} className="w-full rounded-xl border border-dashed border-line px-4 py-3 text-sm font-bold text-brand hover:bg-brand-soft disabled:opacity-50">+ Add product ({products.length}/30)</button>
+                <p className="text-xs leading-relaxed text-slate-500">Photos are uploaded when you save. Use clear, well-lit product photos. The Order Now button appears on the public Business ID when at least one valid product is saved.</p>
+              </div>
+            </Section>
+            <Section title="Frequently asked questions" description="Add up to three questions and answers. They appear near the bottom of the public Business ID.">
+              {[1,2,3].map((num) => <div key={num} className="sm:col-span-2 grid gap-3 rounded-xl border border-line p-4 sm:grid-cols-2">
+                <Field label={`FAQ ${num} question`}><input className={inputCls} maxLength={180} value={v[`faq${num}_question` as keyof Values] as string} onChange={(e)=>set(`faq${num}_question` as keyof Values,e.target.value)} placeholder="e.g. What are your business hours?" /></Field>
+                <Field label="Answer"><textarea className={inputCls} rows={2} maxLength={600} value={v[`faq${num}_answer` as keyof Values] as string} onChange={(e)=>set(`faq${num}_answer` as keyof Values,e.target.value)} placeholder="Write a short answer" /></Field>
+              </div>)}
+            </Section>
+          </>
+        )}
 
         <section className="rounded-2xl border border-line bg-white p-5 sm:p-6">
           <h2 className="font-display text-lg font-semibold text-ink">Design</h2>

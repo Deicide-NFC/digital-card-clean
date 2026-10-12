@@ -27,6 +27,10 @@ export interface ProfileInput {
   address: string | null;
   maps_url: string | null;
   business_hours: string | null;
+  menu_items: string | null;
+  faq1_question: string | null; faq1_answer: string | null;
+  faq2_question: string | null; faq2_answer: string | null;
+  faq3_question: string | null; faq3_answer: string | null;
   theme: ThemeMode;
   design_theme: DesignTheme;
   primary_color: string;
@@ -90,6 +94,13 @@ export function parseProfileForm(fd: FormData) {
   const company = limit("company", 100, "Company");
   const bio = limit("bio", 500, "Bio");
   const business_hours = limit("business_hours", 500, "Business hours");
+  const menu_items = limit("menu_items", 40000, "Menu items");
+  const faq1_question = limit("faq1_question", 180, "FAQ 1 question");
+  const faq1_answer = limit("faq1_answer", 600, "FAQ 1 answer");
+  const faq2_question = limit("faq2_question", 180, "FAQ 2 question");
+  const faq2_answer = limit("faq2_answer", 600, "FAQ 2 answer");
+  const faq3_question = limit("faq3_question", 180, "FAQ 3 question");
+  const faq3_answer = limit("faq3_answer", 600, "FAQ 3 answer");
   const address = limit("address", 300, "Address");
   const facebook = limit("facebook", 200, "Facebook");
   const instagram = limit("instagram", 200, "Instagram");
@@ -158,6 +169,8 @@ export function parseProfileForm(fd: FormData) {
     address,
     maps_url,
     business_hours,
+    menu_items,
+    faq1_question, faq1_answer, faq2_question, faq2_answer, faq3_question, faq3_answer,
     theme,
     design_theme,
     primary_color,

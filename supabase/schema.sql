@@ -38,6 +38,13 @@ create table if not exists public.profiles (
   address        text,
   maps_url       text,
   business_hours text,
+  menu_items     text,
+  faq1_question  text,
+  faq1_answer    text,
+  faq2_question  text,
+  faq2_answer    text,
+  faq3_question  text,
+  faq3_answer    text,
 
   theme          text not null default 'light',
   primary_color  text not null default '#2347F0',

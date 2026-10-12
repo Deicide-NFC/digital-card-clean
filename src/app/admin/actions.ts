@@ -72,6 +72,35 @@ async function removeFolder(db: ReturnType<typeof createAdminClient>, profileId:
   }
 }
 
+
+async function saveMenuItems(db: ReturnType<typeof createAdminClient>, raw: string | null, profileId: string, fd: FormData): Promise<{ value?: string | null; error?: string }> {
+  if (!raw) return { value: null };
+  let items: Array<{ name?: string; description?: string; price?: string | number; imageUrl?: string; formIndex?: number }>;
+  try { items = JSON.parse(raw); } catch { return { error: "Menu data is invalid. Please review the product list." }; }
+  if (!Array.isArray(items) || items.length > 30) return { error: "The menu can contain up to 30 products." };
+  const saved = [];
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const name = String(item.name || "").trim();
+    if (!name) continue;
+    const price = Number(String(item.price ?? "").replace(/[₱,\s]/g, ""));
+    if (!Number.isFinite(price) || price < 0) return { error: `Enter a valid price for ${name}.` };
+    let imageUrl = String(item.imageUrl || "");
+    const file = fd.get(`menu_photo_${Number.isInteger(item.formIndex) ? item.formIndex : i}`);
+    if (file instanceof File && file.size > 0) {
+      const ext = IMAGE_TYPES[file.type];
+      if (!ext) return { error: `Use JPG, PNG or WebP for ${name}'s photo.` };
+      if (file.size > MAX_IMAGE_BYTES) return { error: `The photo for ${name} is larger than 2 MB. Please resize it and try again.` };
+      const path = `${profileId}/menu-${i + 1}-${Date.now()}.${ext}`;
+      const { error } = await db.storage.from(BUCKET).upload(path, Buffer.from(await file.arrayBuffer()), { contentType: file.type, cacheControl: "31536000", upsert: true });
+      if (error) return { error: `Photo upload failed for ${name}: ${error.message}` };
+      imageUrl = db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    }
+    saved.push({ name, description: String(item.description || "").trim().slice(0, 240), price, imageUrl });
+  }
+  return { value: saved.length ? JSON.stringify(saved) : null };
+}
+
 /* -------------------------------------------------------------- create */
 
 export async function createProfileAction(fd: FormData): Promise<ActionResult> {
@@ -101,11 +130,14 @@ export async function createProfileAction(fd: FormData): Promise<ActionResult> {
   if (photo.error) return { ok: false, error: photo.error, fieldErrors: { photo_file: photo.error } };
   const logo = await uploadImage(db, fd.get("logo_file"), values.profile_id, "logo");
   if (logo.error) return { ok: false, error: logo.error, fieldErrors: { logo_file: logo.error } };
+  const menu = values.profile_type === "business" ? await saveMenuItems(db, values.menu_items, values.profile_id, fd) : { value: null as string | null };
+  if (menu.error) return { ok: false, error: menu.error, fieldErrors: { menu_items: menu.error } };
 
   const { data, error } = await db
     .from("profiles")
     .insert({
       ...values,
+      menu_items: menu.value,
       profile_photo: photo.url ?? null,
       company_logo: logo.url ?? null,
       status: "active",
@@ -158,12 +190,14 @@ export async function updateProfileAction(id: string, fd: FormData): Promise<Act
   const logo = await uploadImage(db, fd.get("logo_file"), cur.profile_id, "logo");
   if (logo.error) return { ok: false, error: logo.error, fieldErrors: { logo_file: logo.error } };
   if (logo.url) company_logo = logo.url;
+  const menu = values.profile_type === "business" ? await saveMenuItems(db, values.menu_items, cur.profile_id, fd) : { value: null as string | null };
+  if (menu.error) return { ok: false, error: menu.error, fieldErrors: { menu_items: menu.error } };
 
   const { profile_id: _ignored, ...editable } = values;
   void _ignored;
   const { error } = await db
     .from("profiles")
-    .update({ ...editable, profile_photo, company_logo })
+    .update({ ...editable, menu_items: menu.value, profile_photo, company_logo })
     .eq("id", id);
   if (error) return { ok: false, error: `Could not save changes: ${error.message}` };
 

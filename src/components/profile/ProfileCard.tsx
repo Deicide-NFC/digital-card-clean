@@ -13,6 +13,7 @@ import {
   Phone,
   PhoneCall,
   Send,
+  ShoppingBag,
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
@@ -122,6 +123,18 @@ export function ProfileCard({ profile: p, preview = false }: { profile: Profile;
 
         {/* Primary action */}
         <section className="pf-rise px-5 pt-5" style={rise(2)}>
+          {p.profile_type === "business" && p.menu_items?.trim() && (
+            <a
+              href={preview ? "#" : `/c/${p.profile_id}/order`}
+              onClick={preview ? (e) => e.preventDefault() : undefined}
+              className="pf-press mb-3 flex h-14 w-full items-center justify-center gap-2.5 border border-pf-line bg-pf-surface text-[17px] font-bold text-pf-text shadow-sm"
+              style={{ borderRadius: "var(--btn-r)" }}
+            >
+              <ShoppingBag className="h-5 w-5" aria-hidden />
+              Order Now
+              <ChevronRight className="h-4 w-4" aria-hidden />
+            </a>
+          )}
           <a
             href={preview ? "#" : `/c/${p.profile_id}/vcard`}
             className="pf-press flex h-14 w-full items-center justify-center gap-2.5 bg-pf-accent text-[17px] font-bold text-pf-on-accent shadow-lg"
@@ -228,6 +241,28 @@ export function ProfileCard({ profile: p, preview = false }: { profile: Profile;
                   <p className="whitespace-pre-line text-[16px] text-pf-text">{p.business_hours}</p>
                 </div>
               )}
+            </div>
+          </section>
+        )}
+
+        {p.profile_type === "business" && [
+          { question: p.faq1_question, answer: p.faq1_answer },
+          { question: p.faq2_question, answer: p.faq2_answer },
+          { question: p.faq3_question, answer: p.faq3_answer },
+        ].some((item) => item.question?.trim() && item.answer?.trim()) && (
+          <section className="pf-rise px-5 pt-7" style={rise(6)} aria-label="Frequently asked questions">
+            <h2 className="mb-3 text-lg font-bold text-pf-text">Frequently asked questions</h2>
+            <div className="space-y-2">
+              {[
+                { question: p.faq1_question, answer: p.faq1_answer },
+                { question: p.faq2_question, answer: p.faq2_answer },
+                { question: p.faq3_question, answer: p.faq3_answer },
+              ].filter((item) => item.question?.trim() && item.answer?.trim()).map((item, index) => (
+                <details key={index} className="border border-pf-line bg-pf-surface p-4" style={{ borderRadius: "var(--tile-r)" }}>
+                  <summary className="cursor-pointer font-semibold text-pf-text">{item.question}</summary>
+                  <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-pf-muted">{item.answer}</p>
+                </details>
+              ))}
             </div>
           </section>
         )}
