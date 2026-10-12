@@ -69,7 +69,7 @@ src/lib/                     Validation, vCard builder, link builders, Supabase 
 ## Existing Supabase database: premium themes update
 
 If this project is already deployed with an existing Supabase database, run
-`supabase/migrations/20261010_add_premium_design_themes.sql` in **Supabase → SQL Editor**.
+`supabase/migrations/20261010_add_premium_design_themes.sql` and `supabase/migrations/20261011_add_business_menu.sql` in **Supabase → SQL Editor**, in that order.
 This adds the premium `design_theme`, `profile_type`, and `business_name` columns without changing
 existing profiles. Existing cards remain personal and use the Classic design by default. The
 Light / Dark / Match phone preference continues to work.
@@ -145,3 +145,26 @@ The schema and code are organised so these can be added without a rewrite:
 - Profile photos are cropped and compressed in the browser before upload (max about 640px). Logos are PNG up to 480px.
 - Public cards are `noindex` by default so they are shared by tap and scan rather than found on Google.
 - Dependencies were not installed or built in the environment where this code was written. Run `npm install && npm run build` once locally and fix anything your version of Node flags before deploying.
+
+
+## Business menu and ordering
+
+For a Business ID, edit the profile in Admin and use the **Restaurant menu & ordering** field. Add one menu item per line in this format:
+
+```text
+Chicken Inasal | 180 | Served with rice
+Pancit Canton | 150 | Good for one
+Iced Tea | 45 | 16 oz
+```
+
+The item name and numeric price are required; the description is optional. After saving a business profile with at least one valid menu line, its public card shows **Order Now**, which opens `/c/<profile_id>/order`. Customers select quantities and enter their name, phone, pickup/delivery choice, and optional notes. The order is prepared as a message, copied to the clipboard, and the configured Messenger/Facebook contact opens so the customer can paste and send it. Orders are not stored or automatically transmitted by this website; the business must confirm the order in chat.
+
+Before using the menu feature on an existing Supabase project, run `supabase/migrations/20261011_add_business_menu.sql` in the Supabase SQL Editor.
+
+
+## Business ID product menu and FAQs
+
+- Run `supabase/migrations/20261011_add_business_menu_photos_faqs.sql` once in Supabase SQL Editor after deploying the code.
+- In Admin > Customers > edit a Business ID, use **Restaurant menu & ordering** to add up to 30 products. Each product supports a photo, name, short description, and price. Photos are compressed in the browser and stored in the existing `profile-assets` Supabase Storage bucket when saved.
+- Fill any of the three FAQ question/answer pairs to show them near the bottom of the Business ID. Leave a pair blank to hide it.
+- Customers can choose quantities, enter their contact information, select a needed date and time, choose pickup or delivery, and prepare the order for Messenger. Orders are not automatically submitted or saved to a database; the customer must paste/send the prepared message and the business confirms it in chat.
