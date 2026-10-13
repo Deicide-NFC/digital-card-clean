@@ -178,31 +178,31 @@ export function ProfileCard({ profile: p, preview = false }: { profile: Profile;
         {(p.website || socials.length > 0) && (
           <section className="pf-rise px-5 pt-7" style={rise(4)} aria-label="Links">
             <h2 className="font-display text-lg font-semibold text-pf-text">Connect</h2>
-            <ul className="mt-3 space-y-3">
+            <ul className="mt-3 grid grid-cols-2 gap-3">
               {p.website && (
                 <li>
-                  <LinkRow
+                  <TrackedLink
                     href={websiteHref(p.website)}
                     event="website"
                     profileId={p.profile_id}
                     preview={preview}
-                    Icon={Globe}
-                    label="Website"
-                    sub={displayWebsite(p.website)}
-                  />
+                    className="pf-press flex min-h-12 items-center justify-center rounded-full bg-slate-300 px-3 py-3 text-center text-[13px] font-medium text-slate-900 transition hover:bg-slate-400"
+                  >
+                    Website
+                  </TrackedLink>
                 </li>
               )}
               {socials.map((s) => (
                 <li key={s.key}>
-                  <LinkRow
+                  <TrackedLink
                     href={s.href}
                     event={s.event}
                     profileId={p.profile_id}
                     preview={preview}
-                    Icon={SOCIAL_ICONS[s.key]}
-                    label={s.label}
-                    sub={s.handle}
-                  />
+                    className="pf-press flex min-h-12 items-center justify-center rounded-full bg-slate-300 px-3 py-3 text-center text-[13px] font-medium text-slate-900 transition hover:bg-slate-400"
+                  >
+                    {s.label}
+                  </TrackedLink>
                 </li>
               ))}
             </ul>
