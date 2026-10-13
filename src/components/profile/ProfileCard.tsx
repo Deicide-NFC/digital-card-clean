@@ -267,6 +267,21 @@ export function ProfileCard({ profile: p, preview = false }: { profile: Profile;
           </section>
         )}
 
+        {p.profile_type === "business" && p.google_review_url?.trim() && (
+          <section className="pf-rise px-5 pt-7" style={rise(6)} aria-label="Google reviews">
+            <a
+              href={p.google_review_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pf-press flex min-h-12 w-full items-center justify-center gap-2 border border-pf-line bg-pf-surface px-4 py-3 text-center text-sm font-semibold text-pf-text transition hover:opacity-80"
+              style={{ borderRadius: "var(--btn-r)" }}
+            >
+              <Star className="h-4 w-4 shrink-0" aria-hidden="true" />
+              Review us on Google
+            </a>
+          </section>
+        )}
+
         <footer className="pf-rise px-5 pt-10 text-center text-[13px] text-pf-muted" style={rise(6)}>
           <p className="font-semibold">{TAGLINE}</p>
           <p className="mt-0.5 opacity-80">{BRAND_NAME}</p>
