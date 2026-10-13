@@ -37,6 +37,7 @@ export interface Profile {
   viber: string | null;
   address: string | null;
   maps_url: string | null;
+  google_review_url: string | null;
   business_hours: string | null;
   menu_items: string | null;
   faq1_question: string | null;

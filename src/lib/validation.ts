@@ -26,6 +26,7 @@ export interface ProfileInput {
   viber: string | null;
   address: string | null;
   maps_url: string | null;
+  google_review_url: string | null;
   business_hours: string | null;
   menu_items: string | null;
   faq1_question: string | null; faq1_answer: string | null;
@@ -131,6 +132,13 @@ export function parseProfileForm(fd: FormData) {
     else maps_url = n;
   }
 
+  let google_review_url = opt(fd, "google_review_url");
+  if (google_review_url) {
+    const n = normalizeUrl(google_review_url);
+    if (!n) errors.google_review_url = "Paste a valid Google review link.";
+    else google_review_url = n;
+  }
+
   const themeRaw = str(fd, "theme") as ThemeMode;
   const theme: ThemeMode = THEMES.includes(themeRaw) ? themeRaw : "light";
   const designRaw = str(fd, "design_theme") as DesignTheme;
@@ -168,6 +176,7 @@ export function parseProfileForm(fd: FormData) {
     viber,
     address,
     maps_url,
+    google_review_url,
     business_hours,
     menu_items,
     faq1_question, faq1_answer, faq2_question, faq2_answer, faq3_question, faq3_answer,
