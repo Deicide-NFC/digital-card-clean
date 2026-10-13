@@ -72,7 +72,7 @@ export function ProfileCard({ profile: p, preview = false }: { profile: Profile;
         <header className="pf-rise relative" style={rise(0)}>
           <div className="pf-cover relative h-36 rounded-b-[28px]">
             {p.company_logo && (
-              <div className="absolute left-5 right-5 top-4 flex h-[96px] items-center justify-center rounded-2xl bg-transparent px-3 py-2">
+              <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-b-[28px]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={p.company_logo}
