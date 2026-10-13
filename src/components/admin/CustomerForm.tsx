@@ -30,6 +30,7 @@ type Values = {
   viber: string;
   address: string;
   maps_url: string;
+  google_review_url: string;
   business_hours: string;
   menu_items: string;
   faq1_question: string; faq1_answer: string; faq2_question: string; faq2_answer: string; faq3_question: string; faq3_answer: string;
@@ -43,7 +44,7 @@ type Values = {
 const TEXT_KEYS = [
   "profile_type", "business_name", "full_name", "profile_id", "job_title", "company", "bio", "phone", "email", "website",
   "facebook", "instagram", "tiktok", "linkedin", "messenger", "whatsapp", "viber",
-  "address", "maps_url", "business_hours", "menu_items", "faq1_question", "faq1_answer", "faq2_question", "faq2_answer", "faq3_question", "faq3_answer", "theme", "design_theme", "primary_color", "background", "button_style",
+  "address", "maps_url", "google_review_url", "business_hours", "menu_items", "faq1_question", "faq1_answer", "faq2_question", "faq2_answer", "faq3_question", "faq3_answer", "theme", "design_theme", "primary_color", "background", "button_style",
 ] as const;
 
 function toValues(p?: Profile): Values {
@@ -68,6 +69,7 @@ function toValues(p?: Profile): Values {
     viber: v(p?.viber),
     address: v(p?.address),
     maps_url: v(p?.maps_url),
+    google_review_url: v(p?.google_review_url),
     business_hours: v(p?.business_hours),
     menu_items: v(p?.menu_items),
     faq1_question: v(p?.faq1_question), faq1_answer: v(p?.faq1_answer),
@@ -563,6 +565,13 @@ export function CustomerForm({ mode, initial }: { mode: "create" | "edit"; initi
               <input id="maps_url" className={inputCls} value={v.maps_url} onChange={(e) => set("maps_url", e.target.value)} placeholder="https://maps.google.com/..." autoCapitalize="none" />
             </Field>
           </div>
+          {v.profile_type === "business" && (
+            <div className="sm:col-span-2">
+              <Field label="Google review link (optional)" error={errors.google_review_url} htmlFor="google_review_url" hint="If provided, a ‘Review us on Google’ button appears below the FAQs on the public card.">
+                <input id="google_review_url" type="url" className={inputCls} value={v.google_review_url} onChange={(e) => set("google_review_url", e.target.value)} placeholder="https://g.page/r/.../review" autoCapitalize="none" />
+              </Field>
+            </div>
+          )}
           <div className="sm:col-span-2">
             <Field label="Business hours" error={errors.business_hours} htmlFor="business_hours" hint="One line per schedule.">
               <textarea id="business_hours" rows={3} maxLength={500} className={inputCls} value={v.business_hours} onChange={(e) => set("business_hours", e.target.value)} placeholder={"Mon to Fri: 9:00 AM to 6:00 PM\nSat: 9:00 AM to 1:00 PM"} />
