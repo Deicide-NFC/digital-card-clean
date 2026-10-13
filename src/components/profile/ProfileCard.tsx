@@ -14,6 +14,7 @@ import {
   PhoneCall,
   Send,
   ShoppingBag,
+  Star,
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
