@@ -74,14 +74,14 @@ export function OrderPageClient({ profile, menuItems }: Props) {
           <div className="space-y-3 p-4 sm:p-6">
             {menuItems.length ? menuItems.map((item) => {
               const qty = quantities[item.id] || 0;
-              return <article key={item.id} className="flex gap-3 rounded-2xl border border-slate-200 p-4">
-                {item.imageUrl ? <img src={item.imageUrl} alt={item.name} className="h-24 w-24 shrink-0 rounded-xl object-cover" /> : <div className="h-24 w-24 shrink-0 rounded-xl bg-slate-100" />}
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-bold">{item.name}</h2>
+              return <article key={item.id} className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-3 rounded-2xl border border-slate-200 p-3 sm:flex sm:items-center sm:gap-3 sm:p-4">
+                {item.imageUrl ? <img src={item.imageUrl} alt={item.name} className="h-[4.5rem] w-[4.5rem] shrink-0 rounded-xl object-cover sm:h-24 sm:w-24" /> : <div className="h-[4.5rem] w-[4.5rem] shrink-0 rounded-xl bg-slate-100 sm:h-24 sm:w-24" />}
+                <div className="min-w-0 sm:flex-1">
+                  <h2 className="font-bold leading-snug">{item.name}</h2>
                   {item.description && <p className="mt-1 text-sm leading-relaxed text-slate-500">{item.description}</p>}
                   <p className="mt-2 font-semibold">{money(item.price)}</p>
                 </div>
-                <div className="flex items-center gap-2 self-center">
+                <div className="col-span-2 flex items-center justify-end gap-3 sm:col-span-1 sm:ml-auto sm:shrink-0">
                   <button type="button" aria-label={`Remove one ${item.name}`} onClick={() => setQuantities((old) => ({ ...old, [item.id]: Math.max(0, (old[item.id] || 0) - 1) }))} className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 disabled:opacity-40" disabled={!qty}><Minus className="h-4 w-4" /></button>
                   <span className="w-5 text-center text-sm font-bold tabular-nums">{qty}</span>
                   <button type="button" aria-label={`Add one ${item.name}`} onClick={() => setQuantities((old) => ({ ...old, [item.id]: (old[item.id] || 0) + 1 }))} className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-white"><Plus className="h-4 w-4" /></button>
