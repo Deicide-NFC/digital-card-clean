@@ -14,7 +14,6 @@ import {
   PhoneCall,
   Send,
   ShoppingBag,
-  Star,
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
@@ -37,7 +36,7 @@ import { TrackedLink } from "./TrackedLink";
 
 const SOCIAL_ICONS: Record<SocialKey, LucideIcon> = {
   whatsapp: MessageCircle,
-  messenger: Send,
+  messenger: MessageCircle,
   viber: PhoneCall,
   facebook: Facebook,
   instagram: Instagram,
@@ -46,6 +45,15 @@ const SOCIAL_ICONS: Record<SocialKey, LucideIcon> = {
 };
 
 const GRID: Record<number, string> = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3" };
+
+function MessengerLogo() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M12 2.1C6.25 2.1 1.6 6.36 1.6 11.62c0 2.98 1.48 5.63 3.8 7.35v3.02l3.48-1.91c.98.28 2.03.43 3.12.43 5.75 0 10.4-4.26 10.4-9.52S17.75 2.1 12 2.1Z" />
+      <path fill="#fff" d="m5.9 14.95 4.45-4.73 2.3 2.13 5.45-2.95-4.45 4.73-2.3-2.13-5.45 2.95Z" />
+    </svg>
+  );
+}
 
 const rise = (i: number) => ({ "--i": i } as CSSProperties);
 
@@ -175,11 +183,11 @@ export function ProfileCard({ profile: p, preview = false }: { profile: Profile;
           </section>
         )}
 
-        {/* Links */}
+        {/* Theme-aware website and social links */}
         {(p.website || socials.length > 0) && (
           <section className="pf-rise px-5 pt-7" style={rise(4)} aria-label="Links">
             <h2 className="font-display text-lg font-semibold text-pf-text">Connect</h2>
-            <ul className="mt-3 grid grid-cols-2 gap-3">
+            <ul className="mt-3 grid grid-cols-2 gap-2.5">
               {p.website && (
                 <li>
                   <TrackedLink
@@ -187,25 +195,50 @@ export function ProfileCard({ profile: p, preview = false }: { profile: Profile;
                     event="website"
                     profileId={p.profile_id}
                     preview={preview}
-                    className="pf-press flex min-h-12 items-center justify-center rounded-full bg-slate-300 px-3 py-3 text-center text-[13px] font-medium text-slate-900 transition hover:bg-slate-400"
+                    className="pf-press group flex min-h-14 min-w-0 items-center gap-2.5 border border-pf-line bg-pf-surface px-3 py-3 text-left text-[14px] font-semibold text-pf-text shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-pf-fg/40 hover:shadow-md"
+                    style={{ borderRadius: "var(--btn-r)" }}
                   >
-                    Website
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-pf-soft text-pf-fg transition group-hover:bg-pf-accent group-hover:text-pf-on-accent">
+                      <Globe className="h-[18px] w-[18px]" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1 truncate">Website</span>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-pf-muted transition group-hover:translate-x-0.5" aria-hidden="true" />
                   </TrackedLink>
                 </li>
               )}
-              {socials.map((s) => (
-                <li key={s.key}>
-                  <TrackedLink
-                    href={s.href}
-                    event={s.event}
-                    profileId={p.profile_id}
-                    preview={preview}
-                    className="pf-press flex min-h-12 items-center justify-center rounded-full bg-slate-300 px-3 py-3 text-center text-[13px] font-medium text-slate-900 transition hover:bg-slate-400"
-                  >
-                    {s.label}
-                  </TrackedLink>
-                </li>
-              ))}
+              {socials.map((s) => {
+                const Icon = SOCIAL_ICONS[s.key];
+                const brandColor: Record<string, string> = {
+                  facebook: "#1877F2",
+                  instagram: "#E4405F",
+                  tiktok: "#111111",
+                  linkedin: "#0A66C2",
+                  whatsapp: "#25D366",
+                  messenger: "#0866FF",
+                  viber: "#7360F2",
+                };
+                return (
+                  <li key={s.key}>
+                    <TrackedLink
+                      href={s.href}
+                      event={s.event}
+                      profileId={p.profile_id}
+                      preview={preview}
+                      className="pf-press group flex min-h-14 min-w-0 items-center gap-2.5 border border-pf-line bg-pf-surface px-3 py-3 text-left text-[14px] font-semibold text-pf-text shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-pf-fg/40 hover:shadow-md"
+                      style={{ borderRadius: "var(--btn-r)" }}
+                    >
+                      <span
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white"
+                        style={{ backgroundColor: brandColor[s.key] || "var(--accent)" }}
+                      >
+                        {s.key === "messenger" ? <MessengerLogo /> : <Icon className="h-[18px] w-[18px]" aria-hidden="true" />}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate">{s.label}</span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-pf-muted transition group-hover:translate-x-0.5" aria-hidden="true" />
+                    </TrackedLink>
+                  </li>
+                );
+              })}
             </ul>
           </section>
         )}
