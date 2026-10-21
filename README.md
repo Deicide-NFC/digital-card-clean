@@ -26,6 +26,10 @@ supabase/schema.sql          Tables, indexes, constraints, RLS, storage bucket
 supabase/seed.sql            3 demo profiles
 middleware.ts                Blocks /admin/* unless signed in as an admin
 src/app/c/[profileId]/       Public card page + /vcard download route
+src/app/order/               Public one-hour card designer and order checkout
+src/app/api/trial/            Temporary trial sessions and private image uploads
+src/app/api/orders/           Order submission and payment-reference intake
+src/app/admin/(dashboard)/orders/ Admin card-order and payment review
 src/app/go/[profileId]/[platform]/ Stable redirect URLs for individual social QR codes
 src/app/api/track/           Counter endpoint (no personal data)
 src/app/admin/               Login + dashboard (overview, customers, QR, NFC guide, settings)
@@ -73,6 +77,16 @@ If this project is already deployed with an existing Supabase database, run
 This adds the premium `design_theme`, `profile_type`, and `business_name` columns without changing
 existing profiles. Existing cards remain personal and use the Classic design by default. The
 Light / Dark / Match phone preference continues to work.
+
+## Card orders, one-hour trials, and QR Ph checkout
+
+1. Run `supabase/migrations/20261021_add_ordering_trials.sql` in Supabase SQL Editor after your existing schema/migrations. This creates private trial uploads, order records, and payment-reference tracking. It does not alter existing profiles.
+2. Add the environment variables in `.env.example` to Vercel. `NEXT_PUBLIC_QRPH_IMAGE_URL` should point to the QR Ph merchant QR image that customers will scan. Until this is configured, the order can be submitted but the checkout screen will explain that payment QR setup is pending.
+3. Set `CRON_SECRET` to a long random secret in Vercel. The included `vercel.json` schedules cleanup hourly; the cleanup route only accepts `Authorization: Bearer <CRON_SECRET>`. On Vercel plans with cron restrictions, confirm the schedule supported by your plan.
+4. Customers can open `/order`, try a design for 60 minutes, upload up to eight JPG/PNG/WebP images (2 MB each), and submit an order. Trial uploads are private; the cleanup route removes expired session files. When an order is submitted, referenced uploads are copied to the private `order-assets` bucket for order processing.
+5. Review orders under `/admin/orders`. Payment references are not automatic proof of payment: check the actual merchant account and mark an order verified only after funds arrive. This version uses a static merchant QR and manual verification; it does not generate per-order dynamic QR codes.
+
+The preview is a design configurator, not a public live profile. A submitted order is not published automatically. The 3D/360-degree viewer is intentionally not included in this version and remains reserved for Premium ID.
 
 ## Deploy to Vercel
 
