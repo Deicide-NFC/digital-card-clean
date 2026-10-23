@@ -1,166 +1,114 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { FormEvent } from "react";
+import type { ChangeEvent, FormEvent, ReactNode } from "react";
+import { BACKGROUND_OPTIONS, BUTTON_OPTIONS, COLOR_PRESETS, DESIGN_THEME_OPTIONS, THEME_OPTIONS } from "@/lib/theme";
+import { ProfileCard } from "@/components/profile/ProfileCard";
+import type { Profile } from "@/lib/types";
 
-type CardDesign = {
-  plan: "personal" | "business";
-  fullName: string;
-  title: string;
-  company: string;
-  phone: string;
-  email: string;
-  website: string;
-  facebook: string;
-  instagram: string;
-  primaryColor: string;
-  backgroundColor: string;
+type Plan = "personal" | "business";
+type Design = {
+  fullName: string; jobTitle: string; company: string; businessName: string; bio: string;
+  phone: string; email: string; website: string; facebook: string; instagram: string;
+  tiktok: string; linkedin: string; messenger: string; whatsapp: string; viber: string;
+  address: string; mapsUrl: string; googleReviewUrl: string; businessHours: string;
+  faq1Question: string; faq1Answer: string; faq2Question: string; faq2Answer: string;
+  faq3Question: string; faq3Answer: string; theme: string; designTheme: string;
+  primaryColor: string; background: string; buttonStyle: string;
 };
-
-const prices = { personal: 99, business: 149 } as const;
+const prices: Record<Plan, number> = { personal: 99, business: 149 };
+const emptyDesign: Design = {
+  fullName: "", jobTitle: "", company: "", businessName: "", bio: "", phone: "", email: "",
+  website: "", facebook: "", instagram: "", tiktok: "", linkedin: "", messenger: "", whatsapp: "",
+  viber: "", address: "", mapsUrl: "", googleReviewUrl: "", businessHours: "", faq1Question: "",
+  faq1Answer: "", faq2Question: "", faq2Answer: "", faq3Question: "", faq3Answer: "",
+  theme: "light", designTheme: "obsidian-gold", primaryColor: "#c9a646", background: "gradient",
+  buttonStyle: "rounded",
+};
+const input = "w-full rounded-xl border border-line bg-white px-3.5 py-3 text-sm text-ink placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20";
+const label = "mb-1.5 block text-sm font-semibold text-ink";
+function Field({ title, value, onChange, placeholder = "", type = "text" }: { title: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) {
+  return <label className="block"><span className={label}>{title}</span><input className={input} type={type} value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)} /></label>;
+}
+function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
+  return <section className="rounded-2xl border border-line bg-white p-5 sm:p-6"><h2 className="font-display text-lg font-semibold text-ink">{title}</h2>{description && <p className="mt-1 text-sm text-slate-500">{description}</p>}<div className="mt-5 grid gap-4 sm:grid-cols-2">{children}</div></section>;
+}
+function ImageUpload({ title, image, onImage, square = false }: { title: string; image: string; onImage: (value: string) => void; square?: boolean }) {
+  const change = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { alert("Please choose a JPG, PNG, or WebP image."); e.target.value = ""; return; }
+    if (file.size > 5 * 1024 * 1024) { alert("Please choose an image smaller than 5 MB."); e.target.value = ""; return; }
+    const reader = new FileReader(); reader.onload = () => onImage(String(reader.result || "")); reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+  return <div><span className={label}>{title}</span><div className="flex items-center gap-4"><div className={`flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden border border-dashed border-line bg-mist ${square ? "rounded-xl" : "rounded-full"}`}>{image ? <img src={image} alt="" className="h-full w-full object-cover" /> : <span className="px-2 text-center text-xs text-slate-400">No image</span>}</div><div className="space-y-2"><label className="inline-block cursor-pointer rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold hover:bg-mist">{image ? "Replace image" : "Upload image"}<input className="hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={change} /></label>{image && <button type="button" className="ml-2 rounded-lg px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50" onClick={() => onImage("")}>Remove</button>}<p className="text-xs text-slate-500">JPG, PNG, or WebP; max 5 MB.</p></div></div></div>;
+}
 
 export default function CardOrderBuilder() {
-  const [design, setDesign] = useState<CardDesign>({
-    plan: "personal",
-    fullName: "",
-    title: "",
-    company: "",
-    phone: "",
-    email: "",
-    website: "",
-    facebook: "",
-    instagram: "",
-    primaryColor: "#b99a56",
-    backgroundColor: "#111111",
-  });
+  const [plan, setPlan] = useState<Plan>("personal");
+  const [d, setD] = useState<Design>(emptyDesign);
+  const [photo, setPhoto] = useState("");
+  const [logo, setLogo] = useState("");
+  const [products, setProducts] = useState<{name:string; description:string; price:string; image:string}[]>([]);
   const [paymentReference, setPaymentReference] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  const price = prices[design.plan];
-  const qrImage = process.env.NEXT_PUBLIC_QRPH_IMAGE_URL;
-  const merchantName = process.env.NEXT_PUBLIC_QRPH_MERCHANT_NAME || "MariBank";
-  const instructions = process.env.NEXT_PUBLIC_QRPH_INSTRUCTIONS ||
-    "Scan using your supported bank or e-wallet app. Confirm the recipient and amount before paying.";
-
-  const update = (key: keyof CardDesign, value: string) =>
-    setDesign((current) => ({ ...current, [key]: value }));
-
-  const safeDesign = useMemo(() => ({
-    ...design,
-    fullName: design.fullName.trim(),
-    title: design.title.trim(),
-    company: design.company.trim(),
-  }), [design]);
-
-  async function submitOrder(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage("");
-    setBusy(true);
+  const update = (key: keyof Design, value: string) => setD(old => ({ ...old, [key]: value }));
+  const profile = useMemo(() => ({
+    id: "preview", profile_id: "preview", profile_type: plan, business_name: d.businessName || d.company || null,
+    full_name: d.fullName || "Your name", job_title: d.jobTitle || null, company: d.company || null, bio: d.bio || null,
+    profile_photo: photo || null, company_logo: logo || null, phone: d.phone || null, email: d.email || null,
+    website: d.website || null, facebook: d.facebook || null, instagram: d.instagram || null, tiktok: d.tiktok || null,
+    linkedin: d.linkedin || null, messenger: d.messenger || null, whatsapp: d.whatsapp || null, viber: d.viber || null,
+    address: d.address || null, maps_url: d.mapsUrl || null, google_review_url: d.googleReviewUrl || null,
+    business_hours: d.businessHours || null,
+    menu_items: JSON.stringify(products.filter(p => p.name.trim()).map(p => ({name:p.name,description:p.description,price:p.price,imageUrl:p.image}))),
+    faq1_question:d.faq1Question||null, faq1_answer:d.faq1Answer||null, faq2_question:d.faq2Question||null,
+    faq2_answer:d.faq2Answer||null, faq3_question:d.faq3Question||null, faq3_answer:d.faq3Answer||null,
+    theme: d.theme, design_theme:d.designTheme, primary_color:d.primaryColor, background:d.background,
+    button_style:d.buttonStyle, status:"active", created_at:"", updated_at:"",
+  } as unknown as Profile), [plan,d,photo,logo,products]);
+  const submit = async (e: FormEvent) => {
+    e.preventDefault(); setMessage("");
+    if (!d.fullName.trim() || !customerEmail.includes("@") || !paymentReference.trim()) { setMessage("Please enter your full name, order email, and payment reference."); return; }
+    if (plan === "business" && !(d.businessName.trim() || d.company.trim())) { setMessage("Please enter your business or company name."); return; }
+    setSubmitting(true);
     try {
-      const response = await fetch("/api/card-orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan: design.plan,
-          price,
-          customerEmail: customerEmail.trim(),
-          paymentReference: paymentReference.trim(),
-          design: safeDesign,
-        }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || "We couldn't submit your order. Please try again.");
-      setMessage(`Order submitted successfully. Your order number is ${result.orderNumber}. Payment is pending manual verification.`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Something went wrong. Please try again.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const fieldClass = "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-700";
-  const labelClass = "mb-1 block text-sm font-semibold text-slate-700";
-
-  return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-900">
-      <div className="mx-auto max-w-6xl">
-        <header className="mb-8">
-          <p className="text-xs font-bold uppercase tracking-[.2em] text-slate-500">NFC Digital Card</p>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">Design your card</h1>
-          <p className="mt-2 max-w-2xl text-slate-600">Customize the details and colors, preview your card, then submit your order for manual payment verification.</p>
-        </header>
-
-        <div className="grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
-          <form onSubmit={submitOrder} className="space-y-6 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-7">
-            <section>
-              <h2 className="text-lg font-bold">1. Choose your plan</h2>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                {(["personal", "business"] as const).map((plan) => (
-                  <button key={plan} type="button" onClick={() => update("plan", plan)} className={`rounded-2xl border p-4 text-left ${design.plan === plan ? "border-slate-900 bg-slate-50 ring-1 ring-slate-900" : "border-slate-200"}`}>
-                    <span className="block font-bold capitalize">{plan} ID</span>
-                    <span className="mt-1 block text-2xl font-extrabold">₱{prices[plan]}</span>
-                    <span className="mt-1 block text-xs text-slate-500">{plan === "personal" ? "For individual contact details" : "For business details and company identity"}</span>
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-bold">2. Card details</h2>
-              <div className="mt-3 grid gap-4 sm:grid-cols-2">
-                <div><label className={labelClass}>Full name *</label><input required maxLength={100} className={fieldClass} value={design.fullName} onChange={(e) => update("fullName", e.target.value)} /></div>
-                <div><label className={labelClass}>Job title</label><input maxLength={100} className={fieldClass} value={design.title} onChange={(e) => update("title", e.target.value)} placeholder="e.g. Dentist" /></div>
-                {design.plan === "business" && <div className="sm:col-span-2"><label className={labelClass}>Business / company name *</label><input required maxLength={120} className={fieldClass} value={design.company} onChange={(e) => update("company", e.target.value)} /></div>}
-                <div><label className={labelClass}>Phone</label><input type="tel" maxLength={40} className={fieldClass} value={design.phone} onChange={(e) => update("phone", e.target.value)} /></div>
-                <div><label className={labelClass}>Email</label><input type="email" maxLength={254} className={fieldClass} value={design.email} onChange={(e) => update("email", e.target.value)} /></div>
-                <div><label className={labelClass}>Website</label><input type="url" maxLength={500} className={fieldClass} value={design.website} onChange={(e) => update("website", e.target.value)} placeholder="https://" /></div>
-                <div><label className={labelClass}>Facebook URL</label><input type="url" maxLength={500} className={fieldClass} value={design.facebook} onChange={(e) => update("facebook", e.target.value)} placeholder="https://" /></div>
-                <div><label className={labelClass}>Instagram URL</label><input type="url" maxLength={500} className={fieldClass} value={design.instagram} onChange={(e) => update("instagram", e.target.value)} placeholder="https://" /></div>
-              </div>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-bold">3. Colors</h2>
-              <div className="mt-3 grid gap-4 sm:grid-cols-2">
-                <label className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-3"><span className="text-sm font-medium">Accent color</span><input aria-label="Accent color" type="color" value={design.primaryColor} onChange={(e) => update("primaryColor", e.target.value)} className="h-10 w-14 cursor-pointer rounded border-0 bg-transparent" /></label>
-                <label className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-3"><span className="text-sm font-medium">Card background</span><input aria-label="Card background" type="color" value={design.backgroundColor} onChange={(e) => update("backgroundColor", e.target.value)} className="h-10 w-14 cursor-pointer rounded border-0 bg-transparent" /></label>
-              </div>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-bold">4. Payment</h2>
-              <p className="mt-1 text-sm text-slate-600">Amount due: <strong>₱{price.toFixed(2)}</strong>. Please verify the recipient name in your banking app before paying.</p>
-              {qrImage ? <div className="mt-3 flex flex-col items-center rounded-2xl border border-slate-200 p-4"><img src={qrImage} alt="QR Ph payment QR code" className="max-h-64 w-auto max-w-full object-contain" /><p className="mt-2 text-sm font-semibold">{merchantName}</p></div> : <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">Payment QR is not configured yet. The site administrator must set NEXT_PUBLIC_QRPH_IMAGE_URL in Vercel before accepting live orders.</div>}
-              <p className="mt-3 text-sm text-slate-600">{instructions}</p>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <div><label className={labelClass}>Payment reference number *</label><input required maxLength={120} className={fieldClass} value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} /></div>
-                <div><label className={labelClass}>Your email for order updates *</label><input required type="email" maxLength={254} className={fieldClass} value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} /></div>
-              </div>
-              <p className="mt-3 text-xs leading-relaxed text-slate-500">Submitting this form does not automatically confirm payment. Your order will remain pending until the administrator verifies the payment reference.</p>
-            </section>
-
-            <button disabled={busy} type="submit" className="w-full rounded-xl bg-slate-900 px-5 py-3.5 font-bold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60">{busy ? "Submitting…" : `Submit order · ₱${price}`}</button>
-            {message && <p role="status" className="rounded-xl bg-slate-100 p-3 text-sm font-medium">{message}</p>}
-          </form>
-
-          <aside className="lg:sticky lg:top-6 lg:self-start">
-            <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-              <div className="flex items-center justify-between"><h2 className="text-lg font-bold">Live preview</h2><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold capitalize">{design.plan} ID</span></div>
-              <div className="mx-auto mt-5 aspect-[1.586/1] w-full max-w-md overflow-hidden rounded-2xl p-5 shadow-xl" style={{ background: design.backgroundColor, color: "#ffffff", border: `2px solid ${design.primaryColor}` }}>
-                <div className="flex h-full flex-col justify-between">
-                  <div className="flex items-start justify-between gap-3"><span className="text-[10px] font-bold uppercase tracking-[.2em]" style={{ color: design.primaryColor }}>NFC DIGITAL CARD</span><span className="h-3 w-3 rounded-full" style={{ background: design.primaryColor }} /></div>
-                  <div><p className="break-words text-xl font-extrabold sm:text-2xl">{design.fullName || "Your name"}</p><p className="mt-1 text-sm text-white/75">{design.title || "Your title"}</p>{design.plan === "business" && <p className="mt-1 text-sm font-semibold" style={{ color: design.primaryColor }}>{design.company || "Your business"}</p>}</div>
-                  <div className="space-y-1 text-xs text-white/75">{design.phone && <p>{design.phone}</p>}{design.email && <p className="break-all">{design.email}</p>}{design.website && <p className="break-all">{design.website}</p>}<p className="pt-1 text-[9px] font-bold tracking-widest" style={{ color: design.primaryColor }}>TAP · SCAN · CONNECT</p></div>
-                </div>
-              </div>
-              <div className="mt-4 rounded-2xl bg-slate-50 p-4"><div className="flex items-center justify-between text-sm"><span className="text-slate-600">Card price</span><strong>₱{price.toFixed(2)}</strong></div><div className="mt-2 flex items-center justify-between text-sm"><span className="text-slate-600">Payment status</span><span className="font-semibold text-amber-700">Pending verification</span></div></div>
-              <p className="mt-4 text-xs leading-relaxed text-slate-500">This is a visual concept preview. Profile photos, logo uploads, additional themes, business menus, FAQs, and a private one-hour trial are not included in this first integration stage.</p>
-            </div>
-          </aside>
-        </div>
-      </div>
-    </main>
-  );
+      const res = await fetch("/api/card-orders", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({
+        plan, customerEmail, paymentReference,
+        design: { fullName:d.fullName, title:d.jobTitle, company:d.company || d.businessName, phone:d.phone, email:d.email,
+          website:d.website, facebook:d.facebook, instagram:d.instagram, tiktok:d.tiktok, linkedin:d.linkedin,
+          messenger:d.messenger, whatsapp:d.whatsapp, viber:d.viber, bio:d.bio, address:d.address, mapsUrl:d.mapsUrl,
+          businessHours:d.businessHours, faq1Question:d.faq1Question, faq1Answer:d.faq1Answer, faq2Question:d.faq2Question,
+          faq2Answer:d.faq2Answer, faq3Question:d.faq3Question, faq3Answer:d.faq3Answer,
+          designTheme:d.designTheme, theme:d.theme, buttonStyle:d.buttonStyle, background:d.background,
+          primaryColor:d.primaryColor, products
+        }
+      })});
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not submit order.");
+      setMessage(`Order submitted: ${data.orderNumber}. Your payment is pending manual verification.`);
+    } catch (err) { setMessage(err instanceof Error ? err.message : "Could not submit order."); }
+    finally { setSubmitting(false); }
+  };
+  const textField = (title: string, key: keyof Design, placeholder = "", type = "text") => <Field title={title} value={d[key]} onChange={v => update(key,v)} placeholder={placeholder} type={type} />;
+  return <main className="min-h-screen bg-mist text-ink"><header className="border-b border-line bg-white"><div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6"><div className="font-display text-lg font-bold tracking-wide">NFC DIGITAL CARD</div><span className="text-xs font-semibold uppercase tracking-widest text-slate-500">Order builder</span></div></header>
+  <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6"><div className="mb-7"><p className="text-xs font-bold uppercase tracking-[.2em] text-brand">Made for you</p><h1 className="mt-2 font-display text-3xl font-extrabold sm:text-4xl">Design your card</h1><p className="mt-2 max-w-2xl text-sm text-slate-600">Customize your details, photos, links, and theme. The preview updates as you edit.</p></div>
+  <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,.85fr)]"><form onSubmit={submit} className="space-y-5">
+    <Section title="1. Choose your plan" description="Choose the card type that fits you."><div className="sm:col-span-2 grid grid-cols-2 gap-3">{(["personal","business"] as Plan[]).map(p => <button key={p} type="button" onClick={()=>setPlan(p)} className={`rounded-2xl border p-4 text-left transition ${plan===p?"border-brand bg-brand-soft ring-2 ring-brand/15":"border-line hover:bg-mist"}`}><span className="block font-semibold capitalize">{p} ID</span><span className="mt-1 block text-2xl font-extrabold">₱{prices[p]}</span><span className="mt-1 block text-xs text-slate-500">{p==="personal"?"For personal contact details":"For business identity and information"}</span></button>)}</div></Section>
+    <Section title="2. Profile images" description="Add a profile photo and, for businesses, a company logo."><ImageUpload title="Profile photo" image={photo} onImage={setPhoto}/>{plan==="business" && <ImageUpload title="Company logo" image={logo} onImage={setLogo} square/>}</Section>
+    <Section title="3. Card details" description="These details appear on your digital card.">{textField("Full name *","fullName","Your full name")}{textField("Job title","jobTitle","e.g. Dentist")}{textField("Company","company","Company name")}{plan==="business" && textField("Business name *","businessName","Business name")}<div className="sm:col-span-2"><label className="block"><span className={label}>Short bio</span><textarea className={input} rows={3} value={d.bio} onChange={e=>update("bio",e.target.value)} placeholder="A short introduction"/></label></div>{textField("Phone","phone","+63...","tel")}{textField("Email on card","email","name@example.com","email")}{textField("Website","website","https://...")}</Section>
+    <Section title="4. Social and contact buttons" description="Only links you fill in will appear on the preview.">{textField("Facebook URL","facebook","https://facebook.com/...")}{textField("Instagram URL","instagram","https://instagram.com/...")}{textField("Messenger link","messenger","https://m.me/...")}{textField("TikTok URL","tiktok","https://tiktok.com/@...")}{textField("LinkedIn URL","linkedin","https://linkedin.com/in/...")}{textField("WhatsApp number or link","whatsapp","+63... or https://wa.me/...")}{textField("Viber number or link","viber","+63... or Viber link")}</Section>
+    <Section title="5. Themes and appearance" description="These are the same theme options available in the admin editor."><div className="sm:col-span-2"><span className={label}>Design theme</span><div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{DESIGN_THEME_OPTIONS.map(o=><button type="button" key={o.value} onClick={()=>update("designTheme",o.value)} className={`rounded-xl border px-3 py-3 text-sm font-semibold ${d.designTheme===o.value?"border-brand bg-brand-soft text-brand":"border-line hover:bg-mist"}`}>{o.label}</button>)}</div></div><div className="sm:col-span-2"><span className={label}>Accent color</span><div className="flex flex-wrap gap-2">{COLOR_PRESETS.map(c=><button type="button" aria-label={`Set accent ${c}`} key={c} onClick={()=>update("primaryColor",c)} className={`h-9 w-9 rounded-full border-2 ${d.primaryColor===c?"border-ink ring-2 ring-brand/20":"border-white"}`} style={{backgroundColor:c}}/>)}<input aria-label="Custom accent color" type="color" value={d.primaryColor} onChange={e=>update("primaryColor",e.target.value)} className="h-9 w-12 cursor-pointer rounded border border-line"/></div></div><div><span className={label}>Card mode</span><div className="flex flex-wrap gap-2">{THEME_OPTIONS.map(o=><button key={o.value} type="button" onClick={()=>update("theme",o.value)} className={`rounded-lg border px-3 py-2 text-sm ${d.theme===o.value?"border-brand bg-brand-soft":"border-line"}`}>{o.label}</button>)}</div></div><div><span className={label}>Background style</span><div className="flex flex-wrap gap-2">{BACKGROUND_OPTIONS.map(o=><button key={o.value} type="button" onClick={()=>update("background",o.value)} className={`rounded-lg border px-3 py-2 text-sm ${d.background===o.value?"border-brand bg-brand-soft":"border-line"}`}>{o.label}</button>)}</div></div><div className="sm:col-span-2"><span className={label}>Button shape</span><div className="flex flex-wrap gap-2">{BUTTON_OPTIONS.map(o=><button key={o.value} type="button" onClick={()=>update("buttonStyle",o.value)} className={`rounded-lg border px-3 py-2 text-sm ${d.buttonStyle===o.value?"border-brand bg-brand-soft":"border-line"}`}>{o.label}</button>)}</div></div></Section>
+    {plan==="business" && <><Section title="6. Business information" description="Optional information shown on a business card.">{textField("Address","address","Business address")}{textField("Map link","mapsUrl","https://maps.google.com/...")}{textField("Google review link","googleReviewUrl","https://...")}<div className="sm:col-span-2"><label className="block"><span className={label}>Business hours</span><textarea className={input} rows={3} value={d.businessHours} onChange={e=>update("businessHours",e.target.value)} placeholder="Mon–Sat, 9 AM–6 PM"/></label></div></Section>
+    <Section title="7. Menu / products" description="Add products or services to show in the business preview.">{products.map((p,i)=><div key={i} className="sm:col-span-2 grid gap-3 rounded-xl border border-line p-3 sm:grid-cols-2"><Field title={`Item ${i+1} name`} value={p.name} onChange={v=>setProducts(old=>old.map((x,j)=>i===j?{...x,name:v}:x))} placeholder="Product or service"/><Field title="Price" value={p.price} onChange={v=>setProducts(old=>old.map((x,j)=>i===j?{...x,price:v}:x))} placeholder="₱ price"/><label className="sm:col-span-2 block"><span className={label}>Description</span><textarea className={input} rows={2} value={p.description} onChange={e=>setProducts(old=>old.map((x,j)=>i===j?{...x,description:e.target.value}:x))}/></label><div className="sm:col-span-2"><ImageUpload title="Item photo" image={p.image} onImage={v=>setProducts(old=>old.map((x,j)=>i===j?{...x,image:v}:x))} square/></div><button type="button" className="text-left text-sm font-semibold text-red-600" onClick={()=>setProducts(old=>old.filter((_,j)=>j!==i))}>Remove item</button></div>)}<button type="button" disabled={products.length>=20} onClick={()=>setProducts(old=>[...old,{name:"",description:"",price:"",image:""}])} className="sm:col-span-2 rounded-xl border border-dashed border-line px-4 py-3 text-sm font-bold text-brand disabled:opacity-50">+ Add product or service ({products.length}/20)</button></Section>
+    <Section title="8. Frequently asked questions" description="Add up to three questions and answers.">{[1,2,3].map(n=><div key={n} className="sm:col-span-2 grid gap-3 rounded-xl border border-line p-3 sm:grid-cols-2"><Field title={`FAQ ${n} question`} value={d[`faq${n}Question` as keyof Design]} onChange={v=>update(`faq${n}Question` as keyof Design,v)} placeholder="Question"/><Field title="Answer" value={d[`faq${n}Answer` as keyof Design]} onChange={v=>update(`faq${n}Answer` as keyof Design,v)} placeholder="Answer"/></div>)}</Section></>}
+    <Section title={`${plan==="business"?"9":"6"}. Payment details`} description={`Amount due: ₱${prices[plan]}. Confirm the recipient name in your bank or e-wallet app before paying.`}><div className="sm:col-span-2 rounded-xl border border-line bg-mist p-4 text-sm text-slate-600">{process.env.NEXT_PUBLIC_QRPH_IMAGE_URL ? <img src={process.env.NEXT_PUBLIC_QRPH_IMAGE_URL} alt="QR payment code" className="mx-auto max-h-64 max-w-full rounded-xl bg-white object-contain"/> : <p>Payment QR is not configured yet. The site administrator must set NEXT_PUBLIC_QRPH_IMAGE_URL in Vercel.</p>}<p className="mt-3 text-center">Scan using your supported bank or e-wallet app. Confirm recipient and amount before paying.</p></div><Field title="Payment reference number *" value={paymentReference} onChange={setPaymentReference} placeholder="Enter your payment reference"/><Field title="Your email for order updates *" value={customerEmail} onChange={setCustomerEmail} placeholder="name@example.com" type="email"/></Section>
+    {message && <p role="status" className="rounded-xl border border-line bg-white p-4 text-sm">{message}</p>}
+    <button disabled={submitting} type="submit" className="w-full rounded-xl bg-brand px-5 py-4 font-bold text-white hover:bg-brand-dark disabled:opacity-50">{submitting?"Submitting…":`Submit order · ₱${prices[plan]}`}</button>
+    <p className="text-xs leading-relaxed text-slate-500">Submitting this form does not automatically confirm payment. Your order remains pending until the administrator verifies the payment reference.</p>
+  </form>
+  <aside className="space-y-4 lg:sticky lg:top-5"><section className="rounded-2xl border border-line bg-white p-5"><div className="mb-4 flex items-center justify-between"><h2 className="font-display text-lg font-semibold">Live preview</h2><span className="rounded-full bg-mist px-3 py-1 text-xs font-semibold capitalize">{plan} ID</span></div><div className="mx-auto max-w-sm"><ProfileCard profile={profile} preview /></div><div className="mt-4 flex items-center justify-between border-t border-line pt-4 text-sm"><span className="text-slate-500">Card price</span><strong>₱{prices[plan].toFixed(2)}</strong></div><div className="mt-2 flex items-center justify-between text-sm"><span className="text-slate-500">Payment status</span><span className="font-semibold">Pending verification</span></div></section><p className="text-xs leading-relaxed text-slate-500">Images currently preview in this browser only. Secure temporary upload storage, one-hour trial expiry, and admin approval/publishing must be connected before this page is ready for real customer orders.</p></aside></div></div></main>;
 }
