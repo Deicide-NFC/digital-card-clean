@@ -1,3 +1,35 @@
+import Link from "next/link";
+import { BRAND_NAME, TAGLINE } from "@/lib/brand";
+import { LogoMark } from "@/components/admin/LogoMark";
+
+export default function Home() {
+  return (
+    <main className="relative min-h-[100dvh] overflow-hidden bg-ink text-white">
+      {/* Quiet gold atmosphere */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-40 -top-44 h-[560px] w-[560px] rounded-full opacity-40"
+        style={{
+          background:
+            "repeating-radial-gradient(circle at center, rgba(201,164,92,.22) 0 1.5px, transparent 1.5px 34px)",
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-48 top-[38rem] h-[420px] w-[420px] rounded-full opacity-20 blur-3xl"
+        style={{ background: "radial-gradient(circle, rgba(201,164,92,.45), transparent 68%)" }}
+      />
+
+      <div className="relative mx-auto flex min-h-[100dvh] max-w-6xl flex-col px-5 py-6 sm:px-8 sm:py-8">
+        <header className="flex items-center justify-between gap-4 border-b border-white/10 pb-5">
+          <Link href="/" className="flex items-center gap-3" aria-label={`${BRAND_NAME} home`}>
+            <LogoMark className="h-10 w-10" />
+            <span className="font-display text-sm font-semibold tracking-[0.18em] sm:text-base">
+              {BRAND_NAME}
+            </span>
+          </Link>
+          <Link
+            href="/admin"
             className="rounded-full border border-white/15 px-4 py-2 text-sm text-white/70 transition hover:border-[#c9a45c]/70 hover:text-[#e5c783]"
           >
             Admin sign in
@@ -126,4 +158,10 @@
         </section>
 
         <footer className="flex flex-col gap-2 border-t border-white/10 pt-5 text-xs text-white/35 sm:flex-row sm:items-center sm:justify-between">
-
+          <span>© {new Date().getFullYear()} {BRAND_NAME}. Designed to connect.</span>
+          <span>Personal ID ₱99 · Business ID ₱149</span>
+        </footer>
+      </div>
+    </main>
+  );
+}
