@@ -80,6 +80,50 @@ export default async function OrdersPage() {
                     <p className="text-sm">{new Date(order.created_at).toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Manila" })}</p>
                   </div>
                 </div>
+                <details className="mb-4 rounded-xl border border-line bg-mist/50 p-4">
+                  <summary className="cursor-pointer text-sm font-bold text-brand">View full card details and design</summary>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {([
+                      ["Job title", design.title], ["Business name", design.businessName], ["Bio", design.bio],
+                      ["Phone", design.phone], ["Card email", design.email], ["Website", design.website],
+                      ["Facebook", design.facebook], ["Instagram", design.instagram], ["TikTok", design.tiktok],
+                      ["LinkedIn", design.linkedin], ["Messenger", design.messenger], ["WhatsApp", design.whatsapp],
+                      ["Viber", design.viber], ["Address", design.address], ["Map link", design.mapsUrl],
+                      ["Google review link", design.googleReviewUrl], ["Business hours", design.businessHours],
+                      ["Design theme", design.designTheme], ["Card mode", design.theme],
+                      ["Background style", design.background], ["Button style", design.buttonStyle],
+                      ["Accent color", design.primaryColor],
+                      ["FAQ 1 question", design.faq1Question], ["FAQ 1 answer", design.faq1Answer],
+                      ["FAQ 2 question", design.faq2Question], ["FAQ 2 answer", design.faq2Answer],
+                      ["FAQ 3 question", design.faq3Question], ["FAQ 3 answer", design.faq3Answer],
+                    ] as [string, unknown][]).map(([label, value]) => (
+                      <div key={label} className="min-w-0">
+                        <p className={labelClass}>{label}</p>
+                        <p className="break-words whitespace-pre-wrap text-sm">{typeof value === "string" && value ? value : "—"}</p>
+                      </div>
+                    ))}
+                    {([ ["Profile photo", design.profilePhoto], ["Company logo", design.companyLogo] ] as [string, unknown][]).map(([label, value]) => (
+                      <div key={label}>
+                        <p className={labelClass}>{label}</p>
+                        {typeof value === "string" && value ? <a href={value} target="_blank" rel="noreferrer" className="text-sm font-semibold text-brand underline">Open image</a> : <p className="text-sm text-slate-500">No image uploaded</p>}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-5 border-t border-line pt-4">
+                    <h3 className="text-sm font-bold">Products / services</h3>
+                    {Array.isArray(design.products) && design.products.length ? (
+                      <div className="mt-3 space-y-3">{design.products.map((item, index) => {
+                        const product = item && typeof item === "object" ? item as Record<string, unknown> : {};
+                        return <div key={index} className="rounded-lg border border-line bg-white p-3">
+                          <p className="font-semibold">{typeof product.name === "string" ? product.name : `Item ${index + 1}`}</p>
+                          <p className="mt-1 whitespace-pre-wrap text-sm">{typeof product.description === "string" && product.description ? product.description : "No description"}</p>
+                          <p className="mt-1 text-sm">Price: {typeof product.price === "string" || typeof product.price === "number" ? String(product.price) : "—"}</p>
+                          {typeof product.imageUrl === "string" && product.imageUrl ? <a href={product.imageUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-sm font-semibold text-brand underline">Open product image</a> : null}
+                        </div>;
+                      })}</div>
+                    ) : <p className="mt-2 text-sm text-slate-500">No products or services submitted.</p>}
+                  </div>
+                </details>
                 <form action={updateCardOrderAction} className="flex flex-wrap items-end gap-3 border-t border-line pt-4">
                   <input type="hidden" name="id" value={order.id} />
                   <div>
