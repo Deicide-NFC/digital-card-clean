@@ -20,18 +20,25 @@ type CardOrder = {
 const selectClass = "rounded-lg border border-line bg-white px-3 py-2 text-sm";
 const labelClass = "mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500";
 
-export default async function OrdersPage() {
+export default async function OrdersPage({ searchParams }: { searchParams?: { view?: string } }) {
   const db = createAdminClient();
   const { data, error } = await db.from("card_orders").select("*").order("created_at", { ascending: false }).limit(200);
-  const orders = (data ?? []) as CardOrder[];
-
-  const pendingPayments = orders.filter(o => o.payment_status === "pending").length;
+  const allOrders = (data ?? []) as CardOrder[];
+  const view = searchParams?.view === "completed" ? "completed" : searchParams?.view === "all" ? "all" : "active";
+  const orders = allOrders.filter(order => view === "all" ? true : view === "completed" ? order.order_status === "completed" : order.order_status !== "completed");
+  const pendingPayments = allOrders.filter(o => o.payment_status === "pending").length;
+  const completedCount = allOrders.filter(o => o.order_status === "completed").length;
   return (
     <div className="mx-auto max-w-7xl">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-bold">Orders</h1>
-          <p className="mt-1 text-slate-600">Review customer orders and manually verify payments.</p>
+          <p className="mt-1 text-slate-600">Review customer orders and manually verify payments. Completed orders stay saved in Supabase.</p>
+          <nav className="mt-4 flex flex-wrap gap-2 text-sm">
+            {([{ key: "active", label: `Active orders (${allOrders.length - completedCount})` }, { key: "completed", label: `Completed (${completedCount})` }, { key: "all", label: `All orders (${allOrders.length})` }]).map(tab => (
+              <a key={tab.key} href={tab.key === "active" ? "/admin/orders" : `/admin/orders?view=${tab.key}`} className={`rounded-lg border px-3 py-2 font-semibold ${view === tab.key ? "border-brand bg-brand-soft text-brand" : "border-line bg-white text-slate-600 hover:bg-mist"}`}>{tab.label}</a>
+            ))}
+          </nav>
         </div>
         <div className="rounded-xl border border-line bg-white px-4 py-3 text-sm">
           <span className="text-slate-500">Awaiting payment review</span>
@@ -44,7 +51,7 @@ export default async function OrdersPage() {
           Could not load orders: {error.message}. Check that the card_orders table exists and the Supabase service-role key has access.
         </div>
       ) : orders.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-line bg-white p-10 text-center text-slate-600">No orders have been submitted yet.</div>
+        <div className="mt-6 rounded-2xl border border-dashed border-line bg-white p-10 text-center text-slate-600">{view === "completed" ? "No completed orders yet." : view === "active" ? "No active orders. Completed orders are in the Completed tab." : "No orders have been submitted yet."}</div>
       ) : (
         <div className="mt-6 space-y-4">
           {orders.map(order => {
@@ -150,7 +157,7 @@ export default async function OrdersPage() {
           })}
         </div>
       )}
-      <p className="mt-4 text-xs text-slate-500">Showing up to 200 most recent orders. Always verify payment in your MariBank account before marking an order as verified.</p>
+      <p className="mt-4 text-xs text-slate-500">Showing up to 200 most recent orders for this view. Always verify payment in your MariBank account before marking an order as verified.</p>
     </div>
   );
 }
