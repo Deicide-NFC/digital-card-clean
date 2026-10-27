@@ -39,7 +39,25 @@ function ImageUpload({ title, image, onImage, square = false }: { title: string;
     if (!file) return;
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { alert("Please choose a JPG, PNG, or WebP image."); e.target.value = ""; return; }
     if (file.size > 5 * 1024 * 1024) { alert("Please choose an image smaller than 5 MB."); e.target.value = ""; return; }
-    const reader = new FileReader(); reader.onload = () => onImage(String(reader.result || "")); reader.readAsDataURL(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const source = String(reader.result || "");
+      const img = new Image();
+      img.onload = () => {
+        const maxSide = 1200;
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { alert("Could not process this image. Please try another image."); return; }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        onImage(canvas.toDataURL("image/webp", 0.78));
+      };
+      img.onerror = () => alert("Could not read this image. Please try another image.");
+      img.src = source;
+    };
+    reader.readAsDataURL(file);
     e.target.value = "";
   };
   return <div><span className={label}>{title}</span><div className="flex items-center gap-4"><div className={`flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden border border-dashed border-line bg-mist ${square ? "rounded-xl" : "rounded-full"}`}>{image ? <img src={image} alt="" className="h-full w-full object-cover" /> : <span className="px-2 text-center text-xs text-slate-400">No image</span>}</div><div className="space-y-2"><label className="inline-block cursor-pointer rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold hover:bg-mist">{image ? "Replace image" : "Upload image"}<input className="hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={change} /></label>{image && <button type="button" className="ml-2 rounded-lg px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50" onClick={() => onImage("")}>Remove</button>}<p className="text-xs text-slate-500">JPG, PNG, or WebP; max 5 MB.</p></div></div></div>;
@@ -78,13 +96,14 @@ export default function CardOrderBuilder() {
     try {
       const res = await fetch("/api/card-orders", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({
         plan, customerEmail, paymentReference,
-        design: { fullName:d.fullName, title:d.jobTitle, company:d.company || d.businessName, phone:d.phone, email:d.email,
-          website:d.website, facebook:d.facebook, instagram:d.instagram, tiktok:d.tiktok, linkedin:d.linkedin,
-          messenger:d.messenger, whatsapp:d.whatsapp, viber:d.viber, bio:d.bio, address:d.address, mapsUrl:d.mapsUrl,
-          businessHours:d.businessHours, faq1Question:d.faq1Question, faq1Answer:d.faq1Answer, faq2Question:d.faq2Question,
-          faq2Answer:d.faq2Answer, faq3Question:d.faq3Question, faq3Answer:d.faq3Answer,
-          designTheme:d.designTheme, theme:d.theme, buttonStyle:d.buttonStyle, background:d.background,
-          primaryColor:d.primaryColor, products
+        design: { fullName:d.fullName, title:d.jobTitle, company:d.company || d.businessName, businessName:d.businessName,
+          phone:d.phone, email:d.email, website:d.website, facebook:d.facebook, instagram:d.instagram, tiktok:d.tiktok,
+          linkedin:d.linkedin, messenger:d.messenger, whatsapp:d.whatsapp, viber:d.viber, bio:d.bio, address:d.address,
+          mapsUrl:d.mapsUrl, googleReviewUrl:d.googleReviewUrl, businessHours:d.businessHours,
+          faq1Question:d.faq1Question, faq1Answer:d.faq1Answer, faq2Question:d.faq2Question, faq2Answer:d.faq2Answer,
+          faq3Question:d.faq3Question, faq3Answer:d.faq3Answer, designTheme:d.designTheme, theme:d.theme,
+          buttonStyle:d.buttonStyle, background:d.background, primaryColor:d.primaryColor,
+          profilePhoto:photo, companyLogo:logo, products
         }
       })});
       const data = await res.json();
@@ -110,5 +129,5 @@ export default function CardOrderBuilder() {
     <button disabled={submitting} type="submit" className="w-full rounded-xl bg-brand px-5 py-4 font-bold text-white hover:bg-brand-dark disabled:opacity-50">{submitting?"Submitting…":`Submit order · ₱${prices[plan]}`}</button>
     <p className="text-xs leading-relaxed text-slate-500">Submitting this form does not automatically confirm payment. Your order remains pending until the administrator verifies the payment reference.</p>
   </form>
-  <aside className="space-y-4 lg:sticky lg:top-5"><section className="rounded-2xl border border-line bg-white p-5"><div className="mb-4 flex items-center justify-between"><h2 className="font-display text-lg font-semibold">Live preview</h2><span className="rounded-full bg-mist px-3 py-1 text-xs font-semibold capitalize">{plan} ID</span></div><div className="mx-auto max-w-sm"><ProfileCard profile={profile} preview /></div><div className="mt-4 flex items-center justify-between border-t border-line pt-4 text-sm"><span className="text-slate-500">Card price</span><strong>₱{prices[plan].toFixed(2)}</strong></div><div className="mt-2 flex items-center justify-between text-sm"><span className="text-slate-500">Payment status</span><span className="font-semibold">Pending verification</span></div></section><p className="text-xs leading-relaxed text-slate-500">Images currently preview in this browser only. Secure temporary upload storage, one-hour trial expiry, and admin approval/publishing must be connected before this page is ready for real customer orders.</p></aside></div></div></main>;
+  <aside className="space-y-4 lg:sticky lg:top-5"><section className="rounded-2xl border border-line bg-white p-5"><div className="mb-4 flex items-center justify-between"><h2 className="font-display text-lg font-semibold">Live preview</h2><span className="rounded-full bg-mist px-3 py-1 text-xs font-semibold capitalize">{plan} ID</span></div><div className="mx-auto max-w-sm"><ProfileCard profile={profile} preview /></div><div className="mt-4 flex items-center justify-between border-t border-line pt-4 text-sm"><span className="text-slate-500">Card price</span><strong>₱{prices[plan].toFixed(2)}</strong></div><div className="mt-2 flex items-center justify-between text-sm"><span className="text-slate-500">Payment status</span><span className="font-semibold">Pending verification</span></div></section><p className="text-xs leading-relaxed text-slate-500">Uploaded images are optimized before submission and attached to your order for administrator review. Payment is still verified manually.</p></aside></div></div></main>;
 }
