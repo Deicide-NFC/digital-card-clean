@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, LogOut, Menu, Plus, QrCode, Settings, Smartphone, Users, X } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu, Plus, QrCode, Settings, ShoppingBag, Smartphone, Users, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { signOutAction } from "@/app/admin/actions";
 import { LogoMark } from "./LogoMark";
@@ -10,6 +10,7 @@ import { LogoMark } from "./LogoMark";
 const NAV = [
   { href: "/admin", label: "Dashboard", Icon: LayoutDashboard, exact: true },
   { href: "/admin/customers", label: "Customers", Icon: Users },
+  { href: "/admin/orders", label: "Orders", Icon: ShoppingBag },
   { href: "/admin/qr", label: "QR codes", Icon: QrCode },
   { href: "/admin/nfc", label: "NFC guide", Icon: Smartphone },
   { href: "/admin/settings", label: "Settings", Icon: Settings },
